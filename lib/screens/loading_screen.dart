@@ -19,10 +19,11 @@ class LoadingScreen extends StatefulWidget {
 class _LoadingScreenState extends State<LoadingScreen> {
   static const _apiBaseUrl = String.fromEnvironment(
     'SLEEP_API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:8000',
+    defaultValue: 'http://127.0.0.1:8000',
   );
   final SleepApiService _api = RealSleepApiService(baseUrl: _apiBaseUrl);
   final HistoryService _historyService = HistoryService();
+
 
   String? _errorMessage;
 
@@ -35,7 +36,12 @@ class _LoadingScreenState extends State<LoadingScreen> {
   Future<void> _runPrediction() async {
     setState(() => _errorMessage = null);
     try {
-      final result = await _api.predict(widget.input);
+      // ดีเลย์เทียมสั้นๆ เพื่อให้ loading animation แสดงผลอย่างเป็นธรรมชาติ
+      // (โมเดลจริงตอบเร็วมากจนบางทีแทบไม่เห็น animation เลย)
+      final resultFuture = _api.predict(widget.input);
+      final delayFuture = Future.delayed(const Duration(milliseconds: 600));
+      final result = await resultFuture;
+      await delayFuture;
       await _historyService.addResult(result);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(

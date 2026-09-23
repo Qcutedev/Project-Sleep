@@ -301,47 +301,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _sectionTitle(context, 'Appearance'),
           _card(
             context,
-            child: Column(
-              children: [
-                _radioRow(
-                  context,
-                  icon: Icons.light_mode_outlined,
-                  label: 'Light',
-                  value: 'light',
-                  groupValue: _appearance,
-                  onChanged: (v) {
-                    setState(() => _appearance = v);
-                    _saveString(_kAppearance, v);
+            child: RadioGroup<String>(
+              groupValue: _appearance,
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _appearance = v);
+                _saveString(_kAppearance, v);
+                switch (v) {
+                  case 'light':
                     AppTheme.themeNotifier.value = ThemeMode.light;
-                  },
-                ),
-                Divider(height: 1, color: border),
-                _radioRow(
-                  context,
-                  icon: Icons.dark_mode_outlined,
-                  label: 'Dark',
-                  value: 'dark',
-                  groupValue: _appearance,
-                  onChanged: (v) {
-                    setState(() => _appearance = v);
-                    _saveString(_kAppearance, v);
+                    break;
+                  case 'dark':
                     AppTheme.themeNotifier.value = ThemeMode.dark;
-                  },
-                ),
-                Divider(height: 1, color: border),
-                _radioRow(
-                  context,
-                  icon: Icons.settings_suggest_outlined,
-                  label: 'System default',
-                  value: 'system',
-                  groupValue: _appearance,
-                  onChanged: (v) {
-                    setState(() => _appearance = v);
-                    _saveString(_kAppearance, v);
+                    break;
+                  case 'system':
                     AppTheme.themeNotifier.value = ThemeMode.system;
-                  },
-                ),
-              ],
+                    break;
+                }
+              },
+              child: Column(
+                children: [
+                  _radioRow(
+                    context,
+                    icon: Icons.light_mode_outlined,
+                    label: 'Light',
+                    value: 'light',
+                  ),
+                  Divider(height: 1, color: border),
+                  _radioRow(
+                    context,
+                    icon: Icons.dark_mode_outlined,
+                    label: 'Dark',
+                    value: 'dark',
+                  ),
+                  Divider(height: 1, color: border),
+                  _radioRow(
+                    context,
+                    icon: Icons.settings_suggest_outlined,
+                    label: 'System default',
+                    value: 'system',
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -349,32 +350,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _placeholderNote(context, 'App text stays in English for now — this choice is saved for later'),
           _card(
             context,
-            child: Column(
-              children: [
-                _radioRow(
-                  context,
-                  icon: Icons.language_rounded,
-                  label: 'Thai',
-                  value: 'th',
-                  groupValue: _language,
-                  onChanged: (v) {
-                    setState(() => _language = v);
-                    _saveString(_kLanguage, v);
-                  },
-                ),
-                Divider(height: 1, color: border),
-                _radioRow(
-                  context,
-                  icon: Icons.language_rounded,
-                  label: 'English',
-                  value: 'en',
-                  groupValue: _language,
-                  onChanged: (v) {
-                    setState(() => _language = v);
-                    _saveString(_kLanguage, v);
-                  },
-                ),
-              ],
+            child: RadioGroup<String>(
+              groupValue: _language,
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _language = v);
+                _saveString(_kLanguage, v);
+              },
+              child: Column(
+                children: [
+                  _radioRow(
+                    context,
+                    icon: Icons.language_rounded,
+                    label: 'Thai',
+                    value: 'th',
+                  ),
+                  Divider(height: 1, color: border),
+                  _radioRow(
+                    context,
+                    icon: Icons.language_rounded,
+                    label: 'English',
+                    value: 'en',
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -538,19 +537,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// แถวตัวเลือกแบบ Radio หนึ่งรายการ
+  ///
+  /// ไม่ต้องรับ groupValue/onChanged เองแล้ว — ค่าพวกนี้มาจาก
+  /// `RadioGroup<String>` ที่ครอบอยู่ข้างนอก (ตาม API ใหม่ของ Flutter)
   Widget _radioRow(
     BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
-    required String groupValue,
-    required ValueChanged<String> onChanged,
   }) {
     return RadioListTile<String>(
       value: value,
-      groupValue: groupValue,
       activeColor: AppTheme.primary,
-      onChanged: (v) => onChanged(v!),
       secondary: Icon(icon, color: AppTheme.textSecondaryColor(context)),
       title: Text(label, style: TextStyle(fontSize: 13, color: AppTheme.textPrimaryColor(context))),
     );
