@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
+import '../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,20 +13,19 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   static const _kDisplayName = 'settings_display_name';
   static const _kAge = 'settings_age';
+  static const _kGender = 'settings_gender';
   static const _kDurationUnit = 'settings_duration_unit';
-  static const _kRememberLast = 'settings_remember_last_assessment';
   static const _kSleepReminder = 'settings_sleep_reminder';
   static const _kDailyReminder = 'settings_daily_reminder';
   static const _kAppearance = 'settings_appearance';
   static const _kLanguage = 'settings_language';
-  static const _kLastAssessmentDraft = 'last_assessment_draft';
 
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
 
   bool _loading = true;
+  String _gender = ''; // '' = not set, 'male' / 'female'
   String _durationUnit = 'hours';
-  bool _rememberLast = true;
   bool _sleepReminder = false;
   bool _dailyReminder = false;
   String _appearance = 'light';
@@ -52,8 +52,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _nameController.text = prefs.getString(_kDisplayName) ?? '';
       _ageController.text = prefs.getString(_kAge) ?? '';
+      _gender = prefs.getString(_kGender) ?? '';
       _durationUnit = prefs.getString(_kDurationUnit) ?? 'hours';
-      _rememberLast = prefs.getBool(_kRememberLast) ?? true;
       _sleepReminder = prefs.getBool(_kSleepReminder) ?? false;
       _dailyReminder = prefs.getBool(_kDailyReminder) ?? false;
       _appearance = prefs.getString(_kAppearance) ?? 'light';
@@ -72,23 +72,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setBool(key, value);
   }
 
-  Future<void> _resetAssessmentDraft() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_kLastAssessmentDraft);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Last assessment memory cleared')),
-    );
-  }
-
   Future<void> _confirmResetAllData() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Reset all data?'),
         content: const Text(
-          'คุณต้องการลบข้อมูลการตั้งค่าและข้อมูลการประเมินทั้งหมดหรือไม่? '
-          'การกระทำนี้ไม่สามารถย้อนกลับได้',
+          'This will delete all your settings and assessment history. '
+          'This action cannot be undone.',
         ),
         actions: [
           TextButton(
@@ -107,12 +98,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
+      await NotificationService().cancel(NotificationService.sleepReminderId);
+      await NotificationService().cancel(NotificationService.dailyReminderId);
       if (!mounted) return;
       setState(() {
         _nameController.clear();
         _ageController.clear();
+        _gender = '';
         _durationUnit = 'hours';
-        _rememberLast = true;
         _sleepReminder = false;
         _dailyReminder = false;
         _appearance = 'light';
@@ -144,6 +137,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
           _sectionTitle(context, 'Profile'),
+          _placeholderNote(context, 'This info is used to auto-fill your Sleep Assessment'),
           _card(
             context,
             child: Column(
@@ -173,13 +167,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     keyboardType: TextInputType.number,
                     style: TextStyle(color: textPrimary),
                     decoration: InputDecoration(
-                      labelText: 'Age (optional)',
+                      labelText: 'Age',
                       labelStyle: TextStyle(color: textMuted),
-                      hintText: 'Only used if a future model needs it',
+                      hintText: 'Used to auto-fill your sleep assessment',
                       hintStyle: TextStyle(color: textMuted),
                       border: InputBorder.none,
                     ),
                     onChanged: (v) => _saveString(_kAge, v),
+                  ),
+                ),
+                Divider(height: 1, color: border),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                  child: Row(
+                    children: [
+                      Icon(Icons.wc_outlined, size: 20, color: textSecondary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text('Gender', style: TextStyle(fontSize: 13, color: textPrimary)),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(48, 4, 16, 14),
+                  child: _segmentedToggle(
+                    context,
+                    value: _gender,
+                    options: const {'male': 'Male', 'female': 'Female'},
+                    onChanged: (v) {
+                      setState(() => _gender = v);
+                      _saveString(_kGender, v);
+                    },
                   ),
                 ),
               ],
@@ -215,38 +234,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     },
                   ),
                 ),
-                Divider(height: 1, color: border),
-                SwitchListTile(
-                  secondary: Icon(Icons.history_rounded, color: textSecondary),
-                  title: Text('Remember last assessment', style: TextStyle(fontSize: 13, color: textPrimary)),
-                  subtitle: Text(
-                    'Pre-fill the form with your last answers',
-                    style: TextStyle(fontSize: 11, color: textMuted),
-                  ),
-                  value: _rememberLast,
-                  activeColor: AppTheme.primary,
-                  onChanged: (v) {
-                    setState(() => _rememberLast = v);
-                    _saveBool(_kRememberLast, v);
-                  },
-                ),
-                Divider(height: 1, color: border),
-                ListTile(
-                  leading: Icon(Icons.restart_alt_rounded, color: textSecondary),
-                  title: Text('Reset assessment memory', style: TextStyle(fontSize: 13, color: textPrimary)),
-                  subtitle: Text(
-                    'Clear the remembered last assessment answers',
-                    style: TextStyle(fontSize: 11, color: textMuted),
-                  ),
-                  trailing: Icon(Icons.chevron_right, size: 18, color: textMuted),
-                  onTap: _resetAssessmentDraft,
-                ),
               ],
             ),
           ),
 
           _sectionTitle(context, 'Notifications'),
-          _placeholderNote(context, 'Not connected to a real notification system yet'),
           _card(
             context,
             child: Column(
@@ -254,22 +246,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 SwitchListTile(
                   secondary: Icon(Icons.bedtime_outlined, color: textSecondary),
                   title: Text('Sleep reminder', style: TextStyle(fontSize: 13, color: textPrimary)),
+                  subtitle: Text(
+                    'Reminds you to go to bed every day at 10:00 PM',
+                    style: TextStyle(fontSize: 11, color: textMuted),
+                  ),
                   value: _sleepReminder,
-                  activeColor: AppTheme.primary,
-                  onChanged: (v) {
+                  activeThumbColor: AppTheme.primary,
+                  onChanged: (v) async {
                     setState(() => _sleepReminder = v);
-                    _saveBool(_kSleepReminder, v);
+                    await _saveBool(_kSleepReminder, v);
+                    if (v) {
+                      await NotificationService().scheduleDaily(
+                        id: NotificationService.sleepReminderId,
+                        hour: 22,
+                        minute: 0,
+                        title: 'Time to sleep 🌙',
+                        body: 'Head to bed now for better sleep quality tonight.',
+                      );
+                    } else {
+                      await NotificationService().cancel(NotificationService.sleepReminderId);
+                    }
                   },
                 ),
                 Divider(height: 1, color: border),
                 SwitchListTile(
                   secondary: Icon(Icons.notifications_outlined, color: textSecondary),
                   title: Text('Daily reminder', style: TextStyle(fontSize: 13, color: textPrimary)),
+                  subtitle: Text(
+                    'Reminds you to complete your sleep assessment every day at 8:00 AM',
+                    style: TextStyle(fontSize: 11, color: textMuted),
+                  ),
                   value: _dailyReminder,
-                  activeColor: AppTheme.primary,
-                  onChanged: (v) {
+                  activeThumbColor: AppTheme.primary,
+                  onChanged: (v) async {
                     setState(() => _dailyReminder = v);
-                    _saveBool(_kDailyReminder, v);
+                    await _saveBool(_kDailyReminder, v);
+                    if (v) {
+                      await NotificationService().scheduleDaily(
+                        id: NotificationService.dailyReminderId,
+                        hour: 8,
+                        minute: 0,
+                        title: 'Check in on your sleep 📝',
+                        body: 'Complete today\'s sleep assessment — it only takes a minute.',
+                      );
+                    } else {
+                      await NotificationService().cancel(NotificationService.dailyReminderId);
+                    }
                   },
                 ),
               ],
@@ -279,47 +301,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _sectionTitle(context, 'Appearance'),
           _card(
             context,
-            child: Column(
-              children: [
-                _radioRow(
-                  context,
-                  icon: Icons.light_mode_outlined,
-                  label: 'Light',
-                  value: 'light',
-                  groupValue: _appearance,
-                  onChanged: (v) {
-                    setState(() => _appearance = v);
-                    _saveString(_kAppearance, v);
+            child: RadioGroup<String>(
+              groupValue: _appearance,
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _appearance = v);
+                _saveString(_kAppearance, v);
+                switch (v) {
+                  case 'light':
                     AppTheme.themeNotifier.value = ThemeMode.light;
-                  },
-                ),
-                Divider(height: 1, color: border),
-                _radioRow(
-                  context,
-                  icon: Icons.dark_mode_outlined,
-                  label: 'Dark',
-                  value: 'dark',
-                  groupValue: _appearance,
-                  onChanged: (v) {
-                    setState(() => _appearance = v);
-                    _saveString(_kAppearance, v);
+                    break;
+                  case 'dark':
                     AppTheme.themeNotifier.value = ThemeMode.dark;
-                  },
-                ),
-                Divider(height: 1, color: border),
-                _radioRow(
-                  context,
-                  icon: Icons.settings_suggest_outlined,
-                  label: 'System default',
-                  value: 'system',
-                  groupValue: _appearance,
-                  onChanged: (v) {
-                    setState(() => _appearance = v);
-                    _saveString(_kAppearance, v);
+                    break;
+                  case 'system':
                     AppTheme.themeNotifier.value = ThemeMode.system;
-                  },
-                ),
-              ],
+                    break;
+                }
+              },
+              child: Column(
+                children: [
+                  _radioRow(
+                    context,
+                    icon: Icons.light_mode_outlined,
+                    label: 'Light',
+                    value: 'light',
+                  ),
+                  Divider(height: 1, color: border),
+                  _radioRow(
+                    context,
+                    icon: Icons.dark_mode_outlined,
+                    label: 'Dark',
+                    value: 'dark',
+                  ),
+                  Divider(height: 1, color: border),
+                  _radioRow(
+                    context,
+                    icon: Icons.settings_suggest_outlined,
+                    label: 'System default',
+                    value: 'system',
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -327,32 +350,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _placeholderNote(context, 'App text stays in English for now — this choice is saved for later'),
           _card(
             context,
-            child: Column(
-              children: [
-                _radioRow(
-                  context,
-                  icon: Icons.language_rounded,
-                  label: 'ภาษาไทย',
-                  value: 'th',
-                  groupValue: _language,
-                  onChanged: (v) {
-                    setState(() => _language = v);
-                    _saveString(_kLanguage, v);
-                  },
-                ),
-                Divider(height: 1, color: border),
-                _radioRow(
-                  context,
-                  icon: Icons.language_rounded,
-                  label: 'English',
-                  value: 'en',
-                  groupValue: _language,
-                  onChanged: (v) {
-                    setState(() => _language = v);
-                    _saveString(_kLanguage, v);
-                  },
-                ),
-              ],
+            child: RadioGroup<String>(
+              groupValue: _language,
+              onChanged: (v) {
+                if (v == null) return;
+                setState(() => _language = v);
+                _saveString(_kLanguage, v);
+              },
+              child: Column(
+                children: [
+                  _radioRow(
+                    context,
+                    icon: Icons.language_rounded,
+                    label: 'Thai',
+                    value: 'th',
+                  ),
+                  Divider(height: 1, color: border),
+                  _radioRow(
+                    context,
+                    icon: Icons.language_rounded,
+                    label: 'English',
+                    value: 'en',
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -420,32 +441,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
-
-          _sectionTitle(context, 'Medical Disclaimer'),
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 4),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: AppTheme.warningBg,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.warning_amber_rounded, size: 18, color: AppTheme.warningText),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'SleepWise AI เป็นต้นแบบเพื่อการศึกษา ผลการประเมินจาก AI '
-                    'ไม่ใช่การวินิจฉัยทางการแพทย์ และไม่สามารถใช้แทนคำแนะนำจาก'
-                    'บุคลากรทางการแพทย์ได้',
-                    style: TextStyle(fontSize: 12, color: AppTheme.warningText, height: 1.4),
-                  ),
-                ),
-              ],
             ),
           ),
 
@@ -542,19 +537,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  /// แถวตัวเลือกแบบ Radio หนึ่งรายการ
+  ///
+  /// ไม่ต้องรับ groupValue/onChanged เองแล้ว — ค่าพวกนี้มาจาก
+  /// `RadioGroup<String>` ที่ครอบอยู่ข้างนอก (ตาม API ใหม่ของ Flutter)
   Widget _radioRow(
     BuildContext context, {
     required IconData icon,
     required String label,
     required String value,
-    required String groupValue,
-    required ValueChanged<String> onChanged,
   }) {
     return RadioListTile<String>(
       value: value,
-      groupValue: groupValue,
       activeColor: AppTheme.primary,
-      onChanged: (v) => onChanged(v!),
       secondary: Icon(icon, color: AppTheme.textSecondaryColor(context)),
       title: Text(label, style: TextStyle(fontSize: 13, color: AppTheme.textPrimaryColor(context))),
     );

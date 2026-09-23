@@ -49,12 +49,12 @@ class _ResultScreenState extends State<ResultScreen>
     super.dispose();
   }
 
-  // สีเฉพาะสำหรับ hero header / ปุ่มเท่านั้น (โทนม่วงอ่อน) — ไม่ได้มาจาก AppTheme
-  static const Color _headerTint = Color(0xFFEFEBFC);
-  static const Color _headerMid = Color(0xFFF8F7FD);
-  static const Color _purple = Color(0xFF554BD0);
+  // สีเฉพาะสำหรับ hero header / ปุ่มเท่านั้น (โทนม่วงอ่อน) — เวอร์ชัน light
   static const Color _buttonStart = Color(0xFF4B43C7);
   static const Color _buttonEnd = Color(0xFF5B51D4);
+
+  Color _accentPurple(BuildContext context) =>
+      AppTheme.isDark(context) ? AppTheme.accent : const Color(0xFF554BD0);
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +62,7 @@ class _ResultScreenState extends State<ResultScreen>
     final color = AppTheme.qualityColor(result.quality);
 
     return Scaffold(
-      backgroundColor: AppTheme.surfaceMuted,
+      backgroundColor: AppTheme.bg(context),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -76,9 +76,9 @@ class _ResultScreenState extends State<ResultScreen>
                       children: [
                         _buildScoreCard(context, result, color),
                         const SizedBox(height: 14),
-                        _buildRecommendationCard(result),
+                        _buildRecommendationCard(context, result),
                         const SizedBox(height: 20),
-                        _buildDisclaimerCard(),
+                        _buildDisclaimerCard(context),
                         const Spacer(),
                         _buildHomeButton(context),
                       ],
@@ -94,17 +94,15 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   /// Header เรียบง่าย: ปุ่มย้อนกลับ + หัวข้อ + subtitle + เส้นขีดตกแต่งเล็กๆ
-  /// (ตัดพระจันทร์/เมฆออกตามที่ต้องการ)
   Widget _buildHeader(BuildContext context) {
+    final purple = _accentPurple(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [_headerTint, _headerMid, AppTheme.surfaceMuted],
-        ),
+      decoration: BoxDecoration(
+        color: AppTheme.isDark(context)
+            ? AppTheme.bg(context)
+            : const Color(0xFFF4F2FC), // light mode คงสีม่วงอ่อนนิดๆ ไว้เหมือนเดิม
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,11 +140,11 @@ class _ResultScreenState extends State<ResultScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.bedtime_outlined, size: 13, color: _purple),
+                      Icon(Icons.bedtime_outlined, size: 13, color: purple),
                       const SizedBox(width: 6),
                       Text(
                         'Night check-in',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: _purple),
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: purple),
                       ),
                     ],
                   ),
@@ -185,7 +183,7 @@ class _ResultScreenState extends State<ResultScreen>
               width: 42,
               height: 3,
               decoration: BoxDecoration(
-                color: _purple.withValues(alpha: 0.25),
+                color: purple.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(10),
               ),
             ),
@@ -235,15 +233,17 @@ class _ResultScreenState extends State<ResultScreen>
                           result.quality,
                           style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600, color: color),
                         ),
-                        if (result.confidence != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(
-                              // % ตัวเลขก็ไล่ขึ้นตาม animation ไปด้วย ไม่ใช่โผล่มาทันที
-                              '${(_progressAnimation.value * 100).round()}% confidence',
-                              style: TextStyle(fontSize: 11.5, color: AppTheme.textMutedColor(context)),
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            '${(_progressAnimation.value * 100).round()}/100',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                              color: AppTheme.textPrimaryColor(context),
                             ),
                           ),
+                        ),
                       ],
                     ),
                   ],
@@ -303,12 +303,18 @@ class _ResultScreenState extends State<ResultScreen>
     );
   }
 
-  Widget _buildRecommendationCard(SleepResult result) {
+  Widget _buildRecommendationCard(BuildContext context, SleepResult result) {
+    final purple = _accentPurple(context);
+    final isDark = AppTheme.isDark(context);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [Color(0xFFEAE7FF), Color(0xFFF1EFFF)]),
+        gradient: isDark
+            ? null
+            : const LinearGradient(colors: [Color(0xFFEAE7FF), Color(0xFFF1EFFF)]),
+        color: isDark ? AppTheme.primary.withValues(alpha: 0.14) : null,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -317,31 +323,32 @@ class _ResultScreenState extends State<ResultScreen>
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: const Color(0xFFE1DDF9),
+              color: isDark ? AppTheme.primary.withValues(alpha: 0.28) : const Color(0xFFE1DDF9),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.lightbulb_outline, size: 21, color: _purple),
+            child: Icon(Icons.lightbulb_outline, size: 21, color: purple),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Text(
               result.recommendation,
-              style: const TextStyle(fontSize: 13.5, height: 1.5, color: AppTheme.textPrimary),
+              style: TextStyle(fontSize: 13.5, height: 1.5, color: AppTheme.textPrimaryColor(context)),
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, size: 22, color: _purple),
+          Icon(Icons.chevron_right_rounded, size: 22, color: purple),
         ],
       ),
     );
   }
 
-  Widget _buildDisclaimerCard() {
+  Widget _buildDisclaimerCard(BuildContext context) {
+    final isDark = AppTheme.isDark(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppTheme.warningBg,
-        border: Border.all(color: const Color(0xFFFFE9BE)),
+        color: AppTheme.warningBgColor(context),
+        border: Border.all(color: isDark ? AppTheme.darkWarningText.withValues(alpha: 0.3) : const Color(0xFFFFE9BE)),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -351,16 +358,16 @@ class _ResultScreenState extends State<ResultScreen>
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: AppTheme.warningText.withValues(alpha: 0.15),
+              color: AppTheme.warningTextColor(context).withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.warning_amber_rounded, size: 21, color: AppTheme.warningText),
+            child: Icon(Icons.warning_amber_rounded, size: 21, color: AppTheme.warningTextColor(context)),
           ),
           const SizedBox(width: 14),
-          const Expanded(
+          Expanded(
             child: Text(
               'This is a model prediction from an educational prototype, not a medical diagnosis.',
-              style: TextStyle(fontSize: 12.5, height: 1.5, color: AppTheme.warningText),
+              style: TextStyle(fontSize: 12.5, height: 1.5, color: AppTheme.warningTextColor(context)),
             ),
           ),
         ],

@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.0
+  sdk: '^3.13.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -37,6 +37,12 @@ dependencies:
   fl_chart: ^1.2.0
   shared_preferences: ^2.5.5
   http: ^1.6.0
+  just_audio: ^0.9.40
+  file_picker: ^12.1.3
+  path_provider: ^2.1.4
+  alarm: ^5.12.0
+  flutter_local_notifications: ^22.3.0
+  timezone: 0.11.1
 
 dev_dependencies:
   flutter_test:
@@ -48,6 +54,17 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# App icon generation config — run `dart run flutter_launcher_icons` after
+# changing image_path to regenerate the Android/iOS launcher icons.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  min_sdk_android: 24
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icons/app_icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -63,6 +80,8 @@ flutter:
     # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/sounds/
+    - assets/icons/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -43,6 +43,8 @@ class AppTheme {
   static const Color darkTextSecondary = Color(0xFFB2AFC7);
   static const Color darkTextMuted = Color(0xFF7D7A96);
   static const Color darkBorder = Color(0xFF32304A);
+  static const Color darkWarningBg = Color(0xFF3A2F14);
+  static const Color darkWarningText = Color(0xFFE8C77A);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -250,4 +252,10 @@ class AppTheme {
 
   static Color borderColor(BuildContext context) =>
       isDark(context) ? darkBorder : border;
+      
+  static Color warningBgColor(BuildContext context) =>
+      isDark(context) ? darkWarningBg : warningBg;
+
+  static Color warningTextColor(BuildContext context) =>
+      isDark(context) ? darkWarningText : warningText;
 }

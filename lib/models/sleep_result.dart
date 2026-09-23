@@ -2,11 +2,11 @@ import 'sleep_assessment_input.dart';
 
 /// ผลลัพธ์การประเมินคุณภาพการนอน 1 ครั้ง
 ///
-/// เก็บทั้งผลจาก model (quality, confidence, factors, recommendation)
+/// เก็บทั้งผลจาก model (quality, score, factors, recommendation)
 /// และข้อมูล input ที่ใช้ทำนายไว้ด้วย เพื่อเอาไปแสดงกราฟ/ประวัติย้อนหลังได้
 class SleepResult {
   final String quality; // 'Good' | 'Fair' | 'Poor' (ตรงกับ label จาก model)
-  final double? confidence; // 0.0 - 1.0, เผื่อ model ไม่ส่งค่านี้มาก็ได้ (nullable)
+  final int score; // คะแนนจาก model ที่ backend แปลงเป็น scale 1-100
   final List<String> factors; // ปัจจัยที่สัมพันธ์กับผลลัพธ์ (ไม่ใช่สาเหตุ/การวินิจฉัย)
   final String recommendation; // คำแนะนำทั่วไปเกี่ยวกับ sleep hygiene
   final DateTime timestamp;
@@ -14,28 +14,14 @@ class SleepResult {
 
   const SleepResult({
     required this.quality,
-    required this.confidence,
+    required this.score,
     required this.factors,
     required this.recommendation,
     required this.timestamp,
     required this.input,
   });
 
-  /// คะแนน 0-100 ไว้ใช้วาดกราฟ/gauge เท่านั้น เป็นการแปลงจาก quality
-  /// แบบคร่าวๆ ฝั่ง Flutter เอง ไม่ใช่คะแนนที่ model คำนวณมา
-  int get displayScore {
-    if (confidence != null) return (confidence! * 100).round();
-    switch (quality.toLowerCase()) {
-      case 'good':
-        return 85;
-      case 'fair':
-        return 60;
-      case 'poor':
-        return 30;
-      default:
-        return 50;
-    }
-  }
+  int get displayScore => score;
 
   factory SleepResult.fromJson(
     Map<String, dynamic> json, {
@@ -43,7 +29,7 @@ class SleepResult {
   }) {
     return SleepResult(
       quality: json['sleep_quality'] as String? ?? 'Fair',
-      confidence: (json['confidence'] as num?)?.toDouble(),
+      score: (json['score'] as num).round(),
       factors: (json['factors'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       recommendation: json['recommendation'] as String? ??
@@ -56,7 +42,7 @@ class SleepResult {
   /// เก็บ/อ่านจาก local storage (SharedPreferences) สำหรับหน้า History/Home
   Map<String, dynamic> toStorageJson() => {
         'quality': quality,
-        'confidence': confidence,
+        'score': score,
         'factors': factors,
         'recommendation': recommendation,
         'timestamp': timestamp.toIso8601String(),
@@ -70,7 +56,9 @@ class SleepResult {
   factory SleepResult.fromStorageJson(Map<String, dynamic> json) {
     return SleepResult(
       quality: json['quality'] as String,
-      confidence: (json['confidence'] as num?)?.toDouble(),
+        score: ((json['score'] as num?) ??
+            ((((json['confidence'] as num?)?.toDouble() ?? 0) * 99) + 1))
+          .round(),
       factors: (json['factors'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       recommendation: json['recommendation'] as String,

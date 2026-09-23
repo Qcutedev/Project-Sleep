@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_assessment_input.dart';
 import 'loading_screen.dart';
@@ -8,9 +9,8 @@ import 'loading_screen.dart';
 /// Feature ที่ใช้ตอนนี้ (ตาม dataset จริงจากเพื่อน) มี 5 อย่าง:
 /// Sleep Duration, Stress Level, Physical Activity Level, Age, Gender
 ///
-/// ตอนนี้ทำเป็นฟอร์มหน้าเดียว เลื่อนกรอกทีละช่อง (เรียบง่าย ลด bug)
-/// ถ้าอยากได้แบบ step-by-step (ทีละคำถามเหมือนแอปสมัยใหม่) ทำเพิ่มทีหลังได้
-/// โดยไม่กระทบ field/logic ข้างใน แค่เปลี่ยนวิธีจัดวางหน้าจอ
+/// Age / Gender จะถูกดึงมาจากหน้า Settings > Profile มาเติมให้อัตโนมัติ
+/// (เพราะสองค่านี้ไม่ค่อยเปลี่ยนรายวัน) แต่ยังแก้ในฟอร์มนี้ได้ตามปกติ
 class AssessmentScreen extends StatefulWidget {
   const AssessmentScreen({super.key});
 
@@ -24,6 +24,39 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   double _physicalActivity = 30;
   double _age = 25;
   String _gender = 'Male';
+  String _durationUnit = 'hours'; // มาจาก Settings
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfileDefaults();
+  }
+
+  /// ดึงค่า Age / Gender / Duration unit ที่ตั้งไว้ในหน้า Settings
+  /// มาเติมให้อัตโนมัติ ถ้าผู้ใช้ยังไม่เคยตั้งค่าไว้ ก็ใช้ค่า default เดิม
+  Future<void> _loadProfileDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+
+    final savedAge = prefs.getString('settings_age');
+    final savedGender = prefs.getString('settings_gender');
+    final savedUnit = prefs.getString('settings_duration_unit') ?? 'hours';
+
+    setState(() {
+      if (savedAge != null && savedAge.isNotEmpty) {
+        final parsed = double.tryParse(savedAge);
+        if (parsed != null) {
+          _age = parsed.clamp(10, 90);
+        }
+      }
+      if (savedGender == 'male') {
+        _gender = 'Male';
+      } else if (savedGender == 'female') {
+        _gender = 'Female';
+      }
+      _durationUnit = savedUnit;
+    });
+  }
 
   void _submit() {
     final input = SleepAssessmentInput(
@@ -42,6 +75,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool showMinutes = _durationUnit == 'minutes';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Sleep assessment')),
       body: ListView(
@@ -56,7 +91,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             min: 0,
             max: 12,
             divisions: 24,
-            valueLabel: '${_sleepDuration.toStringAsFixed(1)} hrs',
+            // ค่าที่เก็บจริงยังเป็นชั่วโมงเสมอ (ตรงกับ feature ของโมเดล)
+            // แค่เปลี่ยนตัวเลขที่โชว์ตามหน่วยที่ตั้งไว้ใน Settings
+            valueLabel: showMinutes
+                ? '${(_sleepDuration * 60).round()} min'
+                : '${_sleepDuration.toStringAsFixed(1)} hrs',
             onChanged: (v) => setState(() => _sleepDuration = v),
           ),
           const SizedBox(height: 16),
@@ -267,6 +306,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             data: SliderTheme.of(context).copyWith(
               trackHeight: 3,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              tickMarkShape: SliderTickMarkShape.noTickMark,
+              overlayShape: SliderComponentShape.noOverlay,
             ),
             child: Slider(
               value: value,
