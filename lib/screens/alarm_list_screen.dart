@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/device_service.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/alarm.dart';
 import '../services/alarm_storage_service.dart';
@@ -23,19 +26,38 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
     _load();
   }
 
+  void _sortByWakeTime(List<SleepAlarm> alarms) => alarms.sort((a, b) =>
+      (a.wakeTime.hour * 60 + a.wakeTime.minute)
+          .compareTo(b.wakeTime.hour * 60 + b.wakeTime.minute));
+
   Future<void> _load() async {
+    // 1) แสดงรายการจากที่เก็บในเครื่องทันที (อ่านไฟล์เล็กๆ ไม่ต้องรอระบบปลุก)
     var alarms = await AlarmStorageService.instance.loadAlarms();
-    alarms = await AlarmScheduler.reconcile(alarms);
-    await AlarmStorageService.instance.saveAlarms(alarms);
-    await AlarmNotificationService.instance.syncWithAlarms(alarms);
-    alarms.sort((a, b) =>
-        (a.wakeTime.hour * 60 + a.wakeTime.minute)
-            .compareTo(b.wakeTime.hour * 60 + b.wakeTime.minute));
+    _sortByWakeTime(alarms);
     if (!mounted) return;
     setState(() {
       _alarms = alarms;
       _loading = false;
     });
+
+    // 2) แล้วค่อยตรวจ/ตั้งปลุกจริงและ notification เบื้องหลัง
+    // ถ้าขั้นนี้พังหรือค้าง หน้ารายการก็ยังใช้งานได้ ไม่ติดวงกลมหมุน
+    try {
+      alarms = await AlarmScheduler.reconcile(alarms)
+          .timeout(const Duration(seconds: 10));
+      await AlarmStorageService.instance.saveAlarms(alarms);
+    } catch (_) {
+      // ตั้งปลุกจริงไม่สำเร็จ — ยังต้องไป sync notification ต่อ ไม่ให้ขั้นนี้ขวางกัน
+    }
+    // notification "ตั้งปลุกแล้ว" ทำแยกอีก try เสมอ ไม่ว่าขั้นบนจะสำเร็จหรือไม่
+    try {
+      await AlarmNotificationService.instance
+          .syncWithAlarms(alarms)
+          .timeout(const Duration(seconds: 10));
+    } catch (_) {}
+    _sortByWakeTime(alarms);
+    if (!mounted) return;
+    setState(() => _alarms = alarms);
   }
 
   Future<void> _toggle(SleepAlarm alarm, bool value) async {
@@ -61,12 +83,56 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
       context,
       MaterialPageRoute(builder: (_) => AlarmEditScreen(existingAlarm: alarm)),
     );
-    if (changed == true) _load();
+    if (changed == true) {
+      _load();
+      _maybeShowXiaomiTip();
+    }
+  }
+
+  /// มือถือ Xiaomi/Redmi บล็อกการเด้งหน้าปลุกตอนจอดับไว้เป็นค่าเริ่มต้น
+  /// แสดงคำแนะนำพร้อมปุ่มพาไปเปิดสิทธิ์ แค่ครั้งเดียวหลังตั้งปลุกสำเร็จ
+  Future<void> _maybeShowXiaomiTip() async {
+    const key = 'xiaomi_alarm_tip_shown';
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(key) ?? false) return;
+    if (!await DeviceService.isXiaomi()) return;
+    if (!mounted) return;
+    await prefs.setBool(key, true);
+    if (!mounted) return;
+    final s = S.current;
+    final open = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: Text(s.xiaomiTipTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(s.xiaomiTipBody),
+              const SizedBox(height: 12),
+              Text('• ${s.xiaomiTipStep1}'),
+              const SizedBox(height: 4),
+              Text('• ${s.xiaomiTipStep2}'),
+              const SizedBox(height: 12),
+              Text(s.xiaomiTipStep3),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.later)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(s.openSettings)),
+        ],
+      ),
+    );
+    if (open == true) await DeviceService.openAppPermissions();
   }
 
   int get _activeCount => _alarms.where((a) => a.isEnabled).length;
 
   void _showInfoSheet(BuildContext context) {
+    final s = S.current;
     showModalBottomSheet(
       context: context,
       backgroundColor: AppTheme.surfaceColor(context),
@@ -101,23 +167,21 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
                   child: Icon(Icons.nightlight_round, color: AppTheme.primary, size: 20),
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  'About Sleep Cycle Alarm',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                    color: AppTheme.textPrimaryColor(ctx),
+                Flexible(
+                  child: Text(
+                    s.aboutSleepCycleAlarm,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimaryColor(ctx),
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             Text(
-              'This feature helps you plan your bedtime and wake-up time '
-              'using the sleep cycle concept as a guideline, so you wake up '
-              'when your body is more likely to feel ready. It does not '
-              'replace or change the app\'s AI sleep quality prediction '
-              'system in any way.',
+              s.sleepCycleInfo1,
               style: TextStyle(
                 fontSize: 13.5,
                 height: 1.6,
@@ -132,11 +196,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(
-                'A sleep cycle includes Light Sleep, Deep Sleep, and REM, '
-                'and typically lasts around 90 minutes. This is only an '
-                'estimate for planning purposes, not a fixed number — '
-                'getting enough sleep still matters more than trying to '
-                'wake up at an exact cycle boundary.',
+                s.sleepCycleInfo2,
                 style: TextStyle(
                   fontSize: 12.5,
                   height: 1.5,
@@ -194,6 +254,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final s = S.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 26),
       decoration: BoxDecoration(
@@ -229,20 +290,25 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Sleep Cycle Alarm',
-                  style: TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    letterSpacing: 0.2,
+                // scaleDown: ขนาดเท่าเดิมถ้าพอดี ย่อลงเองเฉพาะจอแคบ ไม่ตัดขึ้นบรรทัดใหม่
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    s.sleepCycleAlarm,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   _alarms.isEmpty
-                      ? 'No alarms set'
-                      : '$_activeCount of ${_alarms.length} active',
+                      ? s.noAlarmsSet
+                      : s.alarmsActive(_activeCount, _alarms.length),
                   style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85)),
                 ),
               ],
@@ -266,6 +332,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
+    final s = S.of(context);
     return Padding(
       padding: const EdgeInsets.only(top: 60),
       child: Column(
@@ -282,7 +349,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
           ),
           const SizedBox(height: 18),
           Text(
-            'No alarms yet',
+            s.noAlarmsYet,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
@@ -291,7 +358,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'Tap the + button to set your first sleep alarm',
+            s.noAlarmsHint,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.5,
@@ -305,6 +372,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
 
   Widget _buildTile(BuildContext context, SleepAlarm alarm) {
     final enabled = alarm.isEnabled;
+    final s = S.of(context);
 
     return Dismissible(
       key: ValueKey(alarm.id),
@@ -322,12 +390,12 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          title: const Text('Delete this alarm?'),
+          title: Text(s.deleteAlarmTitle),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(s.cancel)),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('Delete', style: TextStyle(color: Colors.red.shade400)),
+              child: Text(s.delete, style: TextStyle(color: Colors.red.shade400)),
             ),
           ],
         ),
@@ -415,7 +483,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          SleepAlarm.dayLabels[i],
+                          s.dayLetters[i],
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -427,19 +495,26 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
                       ),
                     );
                   }),
-                  const Spacer(),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      alarm.repeatSummary,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.primary.withValues(alpha: enabled ? 1 : 0.5),
+                  // ป้ายสรุปวันซ้ำ: ชิดขวาเหมือนเดิม แต่ถ้ายาวเกินพื้นที่จะตัดด้วย … แทนการล้นกรอบ
+                  Expanded(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          alarm.repeatSummary,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.primary.withValues(alpha: enabled ? 1 : 0.5),
+                          ),
+                        ),
                       ),
                     ),
                   ),

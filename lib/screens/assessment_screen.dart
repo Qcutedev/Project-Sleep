@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_assessment_input.dart';
 import 'loading_screen.dart';
@@ -76,16 +77,17 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   @override
   Widget build(BuildContext context) {
     final bool showMinutes = _durationUnit == 'minutes';
+    final s = S.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Sleep assessment')),
+      appBar: AppBar(title: Text(s.assessmentTitle)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           _buildSliderCard(
             context: context,
-            title: 'Sleep duration',
-            subtitle: 'How many hours did you sleep last night?',
+            title: s.sleepDuration,
+            subtitle: s.sleepDurationHint,
             icon: Icons.bedtime_outlined,
             value: _sleepDuration,
             min: 0,
@@ -94,15 +96,15 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             // ค่าที่เก็บจริงยังเป็นชั่วโมงเสมอ (ตรงกับ feature ของโมเดล)
             // แค่เปลี่ยนตัวเลขที่โชว์ตามหน่วยที่ตั้งไว้ใน Settings
             valueLabel: showMinutes
-                ? '${(_sleepDuration * 60).round()} min'
-                : '${_sleepDuration.toStringAsFixed(1)} hrs',
+                ? s.minutesShort((_sleepDuration * 60).round())
+                : s.hoursValue(_sleepDuration.toStringAsFixed(1)),
             onChanged: (v) => setState(() => _sleepDuration = v),
           ),
           const SizedBox(height: 16),
           _buildSliderCard(
             context: context,
-            title: 'Stress level',
-            subtitle: 'How stressed have you felt today?',
+            title: s.stressLevel,
+            subtitle: s.stressLevelHint,
             icon: Icons.psychology_outlined,
             value: _stressLevel,
             min: 1,
@@ -114,27 +116,27 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           const SizedBox(height: 16),
           _buildSliderCard(
             context: context,
-            title: 'Physical activity',
-            subtitle: 'Minutes of activity today',
+            title: s.physicalActivity,
+            subtitle: s.physicalActivityHint,
             icon: Icons.directions_walk,
             value: _physicalActivity,
             min: 0,
             max: 120,
             divisions: 24,
-            valueLabel: '${_physicalActivity.round()} min',
+            valueLabel: s.minutesShort(_physicalActivity.round()),
             onChanged: (v) => setState(() => _physicalActivity = v),
           ),
           const SizedBox(height: 16),
           _buildSliderCard(
             context: context,
-            title: 'Age',
-            subtitle: 'Your age in years',
+            title: s.age,
+            subtitle: s.ageHint,
             icon: Icons.cake_outlined,
             value: _age,
             min: 10,
             max: 90,
             divisions: 80,
-            valueLabel: '${_age.round()} yrs',
+            valueLabel: s.yearsValue(_age.round()),
             onChanged: (v) => setState(() => _age = v),
           ),
           const SizedBox(height: 16),
@@ -142,11 +144,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           const SizedBox(height: 28),
           ElevatedButton(
             onPressed: _submit,
-            child: const Text('Analyze'),
+            child: Text(s.analyze),
           ),
           const SizedBox(height: 8),
           Text(
-            'This is an educational prototype. Not a medical diagnosis.',
+            s.assessmentDisclaimer,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context)),
           ),
@@ -156,6 +158,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   }
 
   Widget _buildGenderCard(BuildContext context) {
+    final s = S.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -181,7 +184,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Gender',
+                  s.gender,
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -195,11 +198,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
           Row(
             children: [
               Expanded(
-                child: _buildGenderOption(context, 'Male', Icons.male),
+                child: _buildGenderOption(context, 'Male', s.male, Icons.male),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _buildGenderOption(context, 'Female', Icons.female),
+                child: _buildGenderOption(context, 'Female', s.female, Icons.female),
               ),
             ],
           ),
@@ -208,10 +211,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     );
   }
 
-  Widget _buildGenderOption(BuildContext context, String label, IconData icon) {
-    final bool selected = _gender == label;
+  /// [value] คือค่าที่ส่งให้โมเดล ('Male' / 'Female') ส่วน [label] คือข้อความที่แสดงตามภาษา
+  Widget _buildGenderOption(BuildContext context, String value, String label, IconData icon) {
+    final bool selected = _gender == value;
     return GestureDetector(
-      onTap: () => setState(() => _gender = label),
+      onTap: () => setState(() => _gender = value),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import 'main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -109,9 +110,19 @@ class _SplashScreenState extends State<SplashScreen>
       if (status == AnimationStatus.completed) {
         Timer(const Duration(milliseconds: 1600), () {
           if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MainShell()),
-            );
+            final route = ModalRoute.of(context);
+            if (route != null && !route.isCurrent) {
+              // มีหน้าอื่น (เช่นหน้าปลุกดัง) ทับอยู่บน Splash แล้ว:
+              // เปลี่ยนเฉพาะ Splash ที่อยู่ข้างล่าง ห้ามไปแทนที่หน้าบนสุด
+              Navigator.of(context).replace(
+                oldRoute: route,
+                newRoute: MaterialPageRoute(builder: (context) => const MainShell()),
+              );
+            } else {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const MainShell()),
+              );
+            }
           }
         });
       }
@@ -200,9 +211,9 @@ class _SplashScreenState extends State<SplashScreen>
                 // คำบรรยาย - fade เข้าช้าสุด
                 Opacity(
                   opacity: _subtitleOpacity.value,
-                  child: const Text(
-                    'Understand your sleep',
-                    style: TextStyle(
+                  child: Text(
+                    S.of(context).splashSubtitle,
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 14,
                     ),
