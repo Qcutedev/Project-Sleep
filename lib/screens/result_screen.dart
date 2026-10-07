@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_result.dart';
+import '../services/sleep_stats.dart';
+import '../widgets/quality_badge.dart';
 
 /// แสดงผลลัพธ์การประเมิน 1 ครั้ง
 ///
 /// ใช้คำว่า "Model Prediction" / "Factors associated with the prediction" /
 /// "General Recommendation" ตาม project context ข้อ 15 (Healthcare Disclaimer)
 /// หลีกเลี่ยงคำว่า diagnosis / cause โดยเจตนา
+///
+/// ดีไซน์ชุดเดียวกับหน้า Alarm / Sounds: การ์ดหัวไล่สีม่วง + การ์ดพื้นขาวมุมโค้ง 20
 class ResultScreen extends StatefulWidget {
   final SleepResult result;
 
@@ -49,261 +54,326 @@ class _ResultScreenState extends State<ResultScreen>
     super.dispose();
   }
 
-  // สีเฉพาะสำหรับ hero header / ปุ่มเท่านั้น (โทนม่วงอ่อน) — เวอร์ชัน light
-  static const Color _buttonStart = Color(0xFF4B43C7);
-  static const Color _buttonEnd = Color(0xFF5B51D4);
-
   Color _accentPurple(BuildContext context) =>
-      AppTheme.isDark(context) ? AppTheme.accent : const Color(0xFF554BD0);
+      AppTheme.isDark(context) ? AppTheme.accent : AppTheme.primary;
+
+  Color _tint(BuildContext context) => AppTheme.isDark(context)
+      ? AppTheme.primary.withValues(alpha: 0.18)
+      : AppTheme.primaryLight;
 
   @override
   Widget build(BuildContext context) {
     final result = widget.result;
-    final color = AppTheme.qualityColor(result.quality);
 
     return Scaffold(
       backgroundColor: AppTheme.bg(context),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Column(
-              children: [
-                _buildHeader(context),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 6, 18, 18),
-                    child: Column(
-                      children: [
-                        _buildScoreCard(context, result, color),
-                        const SizedBox(height: 14),
-                        _buildRecommendationCard(context, result),
-                        const SizedBox(height: 20),
-                        _buildDisclaimerCard(context),
-                        const Spacer(),
-                        _buildHomeButton(context),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+          children: [
+            _buildHeader(context, result),
+            const SizedBox(height: 16),
+            _buildInputsCard(context, result),
+            const SizedBox(height: 16),
+            _buildFactorsCard(context, result),
+            const SizedBox(height: 16),
+            _buildRecommendationCard(context, result),
+            const SizedBox(height: 16),
+            _buildDisclaimerCard(context),
+            const SizedBox(height: 24),
+            _buildHomeButton(context),
+          ],
         ),
       ),
     );
   }
 
-  /// Header เรียบง่าย: ปุ่มย้อนกลับ + หัวข้อ + subtitle + เส้นขีดตกแต่งเล็กๆ
-  Widget _buildHeader(BuildContext context) {
-    final purple = _accentPurple(context);
+  /// การ์ดหัวไล่สีม่วง: ปุ่มย้อนกลับ + วันที่ของผล + วงแหวนคะแนน + ระดับคุณภาพ
+  Widget _buildHeader(BuildContext context, SleepResult result) {
+    final s = S.of(context);
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 4, 18, 6),
+      padding: const EdgeInsets.fromLTRB(22, 20, 18, 24),
       decoration: BoxDecoration(
-        color: AppTheme.isDark(context)
-            ? AppTheme.bg(context)
-            : const Color(0xFFF4F2FC), // light mode คงสีม่วงอ่อนนิดๆ ไว้เหมือนเดิม
+        borderRadius: BorderRadius.circular(28),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primary.withValues(alpha: 0.95),
+            AppTheme.primary.withValues(alpha: 0.65),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => Navigator.of(context).pop(),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor(context),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 6, offset: const Offset(0, 2)),
-                    ],
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  s.result,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.2,
                   ),
-                  child: Icon(Icons.arrow_back, size: 17, color: AppTheme.textPrimaryColor(context)),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceColor(context),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6, offset: const Offset(0, 2)),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.bedtime_outlined, size: 13, color: purple),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Night check-in',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: purple),
-                      ),
-                    ],
-                  ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.calendar_today_outlined, color: Colors.white, size: 12),
+                    const SizedBox(width: 5),
+                    Text(
+                      s.relativeDate(result.timestamp),
+                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: Text(
-              'Result',
-              style: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimaryColor(context),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              _buildScoreRing(),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      s.sleepQualityLabel,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    QualityBadge(quality: result.quality, fontSize: 18),
+                  ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: Text(
-              "Tonight's sleep quality",
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: AppTheme.textPrimaryColor(context).withValues(alpha: 0.65),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: Container(
-              width: 42,
-              height: 3,
-              decoration: BoxDecoration(
-                color: purple.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildScoreCard(BuildContext context, SleepResult result, Color color) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor(context),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 6)),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 158,
-            height: 158,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    SizedBox(
-                      width: 158,
-                      height: 158,
-                      child: CircularProgressIndicator(
-                        value: _progressAnimation.value,
-                        strokeWidth: 13,
-                        backgroundColor: AppTheme.borderColor(context),
-                        valueColor: AlwaysStoppedAnimation<Color>(color),
-                      ),
-                    ),
-                    Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          result.quality,
-                          style: TextStyle(fontSize: 23, fontWeight: FontWeight.w600, color: color),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            '${(_progressAnimation.value * 100).round()}/100',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.textPrimaryColor(context),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildScoreRing() {
+    return SizedBox(
+      width: 124,
+      height: 124,
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 124,
+                height: 124,
+                child: CircularProgressIndicator(
+                  value: _progressAnimation.value,
+                  strokeWidth: 10,
+                  strokeCap: StrokeCap.round,
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'Factors associated\nwith this result',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.35,
-                      fontWeight: FontWeight.w600,
-                      color: AppTheme.textPrimaryColor(context),
+                    '${(_progressAnimation.value * 100).round()}',
+                    style: const TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.0,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  for (final factor in result.factors)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: AppTheme.isDark(context)
-                              ? AppTheme.primary.withValues(alpha: 0.16)
-                              : AppTheme.primaryLight,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.access_time_rounded, size: 13, color: AppTheme.primary),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                factor,
-                                style: TextStyle(fontSize: 11, color: AppTheme.textPrimaryColor(context)),
-                              ),
-                            ),
-                          ],
-                        ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '/100',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context, {required Widget child}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor(context),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: child,
+    );
+  }
+
+  Widget _cardTitle(BuildContext context, String text) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 15,
+        fontWeight: FontWeight.w700,
+        color: AppTheme.textPrimaryColor(context),
+      ),
+    );
+  }
+
+  Widget _iconTile(BuildContext context, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: _tint(context),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Icon(icon, color: _accentPurple(context), size: 18),
+    );
+  }
+
+  /// ข้อมูลที่ผู้ใช้กรอกตอนประเมินครั้งนี้ — มีประโยชน์ตอนเปิดดูผลย้อนหลัง
+  Widget _buildInputsCard(BuildContext context, SleepResult result) {
+    final s = S.of(context);
+    final input = result.input;
+
+    Widget stat(IconData icon, String value, String label) {
+      return Expanded(
+        child: Column(
+          children: [
+            _iconTile(context, icon),
+            const SizedBox(height: 8),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimaryColor(context),
+                ),
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return _card(
+      context,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cardTitle(context, s.yourInputs),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              stat(
+                Icons.bedtime_outlined,
+                s.hoursValue(input.sleepDuration.toStringAsFixed(1)),
+                s.inputSleep,
+              ),
+              stat(
+                Icons.psychology_outlined,
+                '${input.stressLevel} / 10',
+                s.inputStress,
+              ),
+              stat(
+                Icons.directions_walk,
+                s.minutesShort(input.physicalActivity),
+                s.inputActivity,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFactorsCard(BuildContext context, SleepResult result) {
+    final s = S.of(context);
+    return _card(
+      context,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cardTitle(context, s.factorsTitle),
+          const SizedBox(height: 4),
+          for (final factor in result.factors)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                children: [
+                  _iconTile(context, factorIcon(factor)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      s.factor(factor),
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        color: AppTheme.textPrimaryColor(context),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
   Widget _buildRecommendationCard(BuildContext context, SleepResult result) {
+    final s = S.of(context);
     final purple = _accentPurple(context);
     final isDark = AppTheme.isDark(context);
 
@@ -311,63 +381,65 @@ class _ResultScreenState extends State<ResultScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: isDark
-            ? null
-            : const LinearGradient(colors: [Color(0xFFEAE7FF), Color(0xFFF1EFFF)]),
-        color: isDark ? AppTheme.primary.withValues(alpha: 0.14) : null,
+        color: AppTheme.primary.withValues(alpha: isDark ? 0.14 : 0.07),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: isDark ? AppTheme.primary.withValues(alpha: 0.28) : const Color(0xFFE1DDF9),
+              color: AppTheme.primary.withValues(alpha: isDark ? 0.28 : 0.12),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.lightbulb_outline, size: 21, color: purple),
           ),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              result.recommendation,
-              style: TextStyle(fontSize: 13.5, height: 1.5, color: AppTheme.textPrimaryColor(context)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  s.generalRecommendation,
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: purple),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  s.recommendation(result.recommendation),
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    height: 1.5,
+                    color: AppTheme.textPrimaryColor(context),
+                  ),
+                ),
+              ],
             ),
           ),
-          Icon(Icons.chevron_right_rounded, size: 22, color: purple),
         ],
       ),
     );
   }
 
   Widget _buildDisclaimerCard(BuildContext context) {
-    final isDark = AppTheme.isDark(context);
+    final warningText = AppTheme.warningTextColor(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppTheme.warningBgColor(context),
-        border: Border.all(color: isDark ? AppTheme.darkWarningText.withValues(alpha: 0.3) : const Color(0xFFFFE9BE)),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppTheme.warningTextColor(context).withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.warning_amber_rounded, size: 21, color: AppTheme.warningTextColor(context)),
-          ),
-          const SizedBox(width: 14),
+          Icon(Icons.warning_amber_rounded, size: 16, color: warningText),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
-              'This is a model prediction from an educational prototype, not a medical diagnosis.',
-              style: TextStyle(fontSize: 12.5, height: 1.5, color: AppTheme.warningTextColor(context)),
+              S.of(context).resultDisclaimer,
+              style: TextStyle(fontSize: 12, height: 1.5, color: warningText),
             ),
           ),
         ],
@@ -378,29 +450,30 @@ class _ResultScreenState extends State<ResultScreen>
   Widget _buildHomeButton(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: () {
-            // เด้งกลับไปหน้า Home ตรงๆ (ข้าม Assessment/Loading ที่ค้างอยู่ใน stack)
-            Navigator.of(context).popUntil((route) => route.isFirst);
-          },
-          child: Ink(
-            padding: const EdgeInsets.symmetric(vertical: 15),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [_buttonStart, _buttonEnd]),
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(color: _buttonStart.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6)),
-              ],
-            ),
-            child: const Row(
+      height: 56,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(colors: [AppTheme.primary, AppTheme.primary.withValues(alpha: 0.75)]),
+          boxShadow: [BoxShadow(color: AppTheme.primary.withValues(alpha: 0.35), blurRadius: 16, offset: const Offset(0, 8))],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              // เด้งกลับไปหน้า Home ตรงๆ (ข้าม Assessment/Loading ที่ค้างอยู่ใน stack)
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            },
+            child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.home_outlined, size: 17, color: Colors.white),
-                SizedBox(width: 8),
-                Text('Back to home', style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: Colors.white)),
+                const Icon(Icons.home_outlined, size: 19, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  S.of(context).backToHome,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
+                ),
               ],
             ),
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:alarm/alarm.dart';
+import 'l10n/app_strings.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/alarm_ringing_screen.dart';
@@ -30,6 +31,9 @@ void main() async {
     _ => ThemeMode.light,
   };
 
+  // โหลดภาษาที่บันทึกไว้ (จากหน้า Settings) ก่อนเปิดแอป เหตุผลเดียวกับธีม
+  AppLanguage.notifier.value = prefs.getString(AppLanguage.prefsKey) ?? 'en';
+
   runApp(const SleepWiseApp());
 }
 
@@ -50,16 +54,30 @@ class _SleepWiseAppState extends State<SleepWiseApp> {
     // เมื่อถึงเวลาปลุกจริง จะเด้งไปหน้า AlarmRingingScreen ทันที
     Alarm.ringing.listen((alarmSet) {
       if (alarmSet.alarms.isEmpty || _ringingScreenOpen) return;
-      final alarm = alarmSet.alarms.first;
-      _ringingScreenOpen = true;
-      navigatorKey.currentState
-          ?.push(
-            MaterialPageRoute(
-              builder: (_) => AlarmRingingScreen(alarmSettings: alarm),
-            ),
-          )
-          .then((_) => _ringingScreenOpen = false);
+      _showRingingScreen(alarmSet.alarms.first);
     });
+  }
+
+  /// ถ้าปลุกดังตอนแอปเพิ่งเริ่มจากปิดสนิท Navigator อาจยังไม่พร้อม
+  /// จึงลองใหม่ทุกเฟรมจนกว่าจะเปิดหน้าปลุกได้ (แทนที่จะข้ามไปเงียบๆ)
+  void _showRingingScreen(AlarmSettings alarm, [int attempt = 0]) {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) {
+      if (attempt < 120 && mounted) {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _showRingingScreen(alarm, attempt + 1),
+        );
+      }
+      return;
+    }
+    _ringingScreenOpen = true;
+    navigator
+        .push(
+          MaterialPageRoute(
+            builder: (_) => AlarmRingingScreen(alarmSettings: alarm),
+          ),
+        )
+        .then((_) => _ringingScreenOpen = false);
   }
 
   @override
@@ -75,6 +93,8 @@ class _SleepWiseAppState extends State<SleepWiseApp> {
           darkTheme: AppTheme.darkTheme,
           themeMode: mode,
           navigatorObservers: [routeObserver],
+          // ครอบทุกหน้า (รวม dialog / bottom sheet) ให้ rebuild เมื่อสลับภาษา
+          builder: (context, child) => LanguageScope(child: child!),
           home: const SplashScreen(),
         );
       },

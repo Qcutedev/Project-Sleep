@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/sound_item.dart';
 import '../services/sound_service.dart';
 import '../services/sound_player_controller.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 
 enum _SoundFilter { imported, builtIn, favorites }
@@ -39,10 +40,10 @@ class _SoundsScreenState extends State<SoundsScreen> {
       final item = await _soundService.importSound();
       if (item != null) {
         setState(() => _importedSounds.add(item));
-        _showSnack('Added "${item.name}"');
+        _showSnack(S.current.soundAdded(item.name));
       }
     } catch (e) {
-      _showSnack('Could not import file. Try again.');
+      _showSnack(S.current.importFailed);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -61,24 +62,26 @@ class _SoundsScreenState extends State<SoundsScreen> {
   }
 
   String _sectionTitle() {
+    final s = S.current;
     switch (_filter) {
       case _SoundFilter.imported:
-        return 'Imported sounds';
+        return s.importedSounds;
       case _SoundFilter.builtIn:
-        return 'Built-in sounds';
+        return s.builtInSounds;
       case _SoundFilter.favorites:
-        return 'Favorite sounds';
+        return s.favoriteSounds;
     }
   }
 
   String _emptyMessage() {
+    final s = S.current;
     switch (_filter) {
       case _SoundFilter.imported:
-        return 'No imported sounds yet';
+        return s.noImportedSounds;
       case _SoundFilter.builtIn:
-        return 'No built-in sounds available';
+        return s.noBuiltInSounds;
       case _SoundFilter.favorites:
-        return 'No favorites yet — tap the heart on a sound to add it here';
+        return s.noFavorites;
     }
   }
 
@@ -86,7 +89,7 @@ class _SoundsScreenState extends State<SoundsScreen> {
     try {
       await widget.controller.playSound(item, queue: queue);
     } catch (e) {
-      _showSnack('Couldn\'t play this sound: $e');
+      _showSnack(S.current.cannotPlay(e));
     }
   }
 
@@ -110,6 +113,8 @@ class _SoundsScreenState extends State<SoundsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ลงทะเบียนให้หน้านี้ rebuild เมื่อสลับภาษา (ข้อความด้านล่างอ่านผ่าน S.current)
+    S.of(context);
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
@@ -153,6 +158,7 @@ class _SoundsScreenState extends State<SoundsScreen> {
   }
 
   Widget _buildHeader(BuildContext context, Color accent) {
+    final s = S.current;
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 22, 22, 26),
       decoration: BoxDecoration(
@@ -188,9 +194,9 @@ class _SoundsScreenState extends State<SoundsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Sleep Sounds',
-                  style: TextStyle(
+                Text(
+                  s.sleepSounds,
+                  style: const TextStyle(
                     fontSize: 19,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -200,8 +206,8 @@ class _SoundsScreenState extends State<SoundsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   widget.controller.currentSound != null
-                      ? 'Now playing: ${widget.controller.currentSound!.name}'
-                      : 'Calming sounds to help you fall asleep',
+                      ? s.nowPlayingName(widget.controller.currentSound!.displayName)
+                      : s.soundsSubtitle,
                   style: TextStyle(fontSize: 12.5, color: Colors.white.withValues(alpha: 0.85)),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -214,10 +220,11 @@ class _SoundsScreenState extends State<SoundsScreen> {
   }
 
   Widget _buildFilterTabs(BuildContext context, Color accent) {
+    final s = S.current;
     final options = [
-      (_SoundFilter.imported, 'Imported'),
-      (_SoundFilter.builtIn, 'Built-in'),
-      (_SoundFilter.favorites, 'Favorites'),
+      (_SoundFilter.imported, s.filterImported),
+      (_SoundFilter.builtIn, s.filterBuiltIn),
+      (_SoundFilter.favorites, s.filterFavorites),
     ];
     return Container(
       padding: const EdgeInsets.all(5),
@@ -288,12 +295,12 @@ class _SoundsScreenState extends State<SoundsScreen> {
                 width: 14, height: 14,
                 child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               )
-            : const Row(
+            : Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.add, color: Colors.white, size: 18),
-                  SizedBox(width: 4),
-                  Text('Add sound', style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                  const Icon(Icons.add, color: Colors.white, size: 18),
+                  const SizedBox(width: 4),
+                  Text(S.current.addSound, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
                 ],
               ),
       ),
@@ -335,6 +342,7 @@ class _SoundsScreenState extends State<SoundsScreen> {
     final controller = widget.controller;
     final isActive = controller.currentSound?.id == item.id;
     final isFav = controller.isFavorite(item);
+    final s = S.current;
 
     return InkWell(
       onTap: () => _playSound(item, queue),
@@ -384,7 +392,7 @@ class _SoundsScreenState extends State<SoundsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.name,
+                    item.displayName,
                     style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
@@ -394,8 +402,8 @@ class _SoundsScreenState extends State<SoundsScreen> {
                   const SizedBox(height: 3),
                   Text(
                     isActive
-                        ? (controller.isPlaying ? 'Playing now' : 'Paused')
-                        : (item.isImported ? 'Your file' : 'Built-in sound'),
+                        ? (controller.isPlaying ? s.playingNow : s.paused)
+                        : (item.isImported ? s.yourFile : s.builtInSound),
                     style: TextStyle(
                       fontSize: 11.5,
                       color: isActive ? accent : AppTheme.textMutedColor(context),

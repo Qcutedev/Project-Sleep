@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 
 /// ตัวเลือกเวลาเข้านอนที่แนะนำ คำนวณจาก sleep cycle โดยประมาณ (ไม่ใช่กฎตายตัว)
 class BedtimeOption {
@@ -17,8 +18,7 @@ class BedtimeOption {
   String get durationLabel {
     final h = sleepDuration.inHours;
     final m = sleepDuration.inMinutes % 60;
-    if (m == 0) return '${h}h sleep';
-    return '${h}h ${m}m sleep';
+    return S.current.sleepDurationLabel(h, m);
   }
 }
 
@@ -40,23 +40,19 @@ class SleepAlarm {
     this.snoozeMinutes = 10,
   }) : repeatDays = repeatDays ?? {};
 
-  static const List<String> dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  static const List<String> dayNamesShort = [
-    'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'
-  ];
-
   /// ข้อความสรุป repeat แสดงในหน้ารายการ เช่น "Every day", "Weekdays", "Mon, Wed" หรือ "Once"
   String get repeatSummary {
-    if (repeatDays.isEmpty) return 'Once';
-    if (repeatDays.length == 7) return 'Every day';
+    final s = S.current;
+    if (repeatDays.isEmpty) return s.repeatOnce;
+    if (repeatDays.length == 7) return s.repeatEveryDay;
     if (repeatDays.length == 5 && repeatDays.containsAll({1, 2, 3, 4, 5})) {
-      return 'Weekdays';
+      return s.repeatWeekdays;
     }
     if (repeatDays.length == 2 && repeatDays.containsAll({6, 7})) {
-      return 'Weekends';
+      return s.repeatWeekends;
     }
     final sorted = repeatDays.toList()..sort();
-    return sorted.map((d) => dayNamesShort[d - 1]).join(', ');
+    return sorted.map((d) => s.dayNamesShort[d - 1]).join(', ');
   }
 
   Map<String, dynamic> toJson() => {

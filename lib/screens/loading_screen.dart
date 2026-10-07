@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_assessment_input.dart';
 import '../services/sleep_api_service.dart';
@@ -25,7 +26,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   final HistoryService _historyService = HistoryService();
 
 
-  String? _errorMessage;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -34,7 +35,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
   }
 
   Future<void> _runPrediction() async {
-    setState(() => _errorMessage = null);
+    setState(() => _hasError = false);
     try {
       // ดีเลย์เทียมสั้นๆ เพื่อให้ loading animation แสดงผลอย่างเป็นธรรมชาติ
       // (โมเดลจริงตอบเร็วมากจนบางทีแทบไม่เห็น animation เลย)
@@ -49,24 +50,23 @@ class _LoadingScreenState extends State<LoadingScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _errorMessage = 'Something went wrong. Please try again.';
-      });
+      setState(() => _hasError = true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       body: Center(
-        child: _errorMessage == null
+        child: !_hasError
             ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const _SleepingPillowAnimation(),
                   const SizedBox(height: 20),
                   Text(
-                    'Analyzing your sleep pattern',
+                    s.analyzingPattern,
                     style: TextStyle(
                       fontSize: 14,
                       color: AppTheme.textSecondaryColor(context),
@@ -81,11 +81,11 @@ class _LoadingScreenState extends State<LoadingScreen> {
                   children: [
                     const Icon(Icons.error_outline, color: AppTheme.poor, size: 32),
                     const SizedBox(height: 12),
-                    Text(_errorMessage!, textAlign: TextAlign.center),
+                    Text(s.somethingWentWrong, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _runPrediction,
-                      child: const Text('Try again'),
+                      child: Text(s.tryAgain),
                     ),
                   ],
                 ),

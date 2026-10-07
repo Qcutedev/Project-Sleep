@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../services/sound_player_controller.dart';
 import '../widgets/mini_player_bar.dart';
@@ -43,6 +44,7 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
       body: IndexedStack(
         index: _index,
@@ -84,21 +86,21 @@ class _MainShellState extends State<MainShell> {
                   selectedIndex: _index,
                   onDestinationSelected: (i) => setState(() => _index = i),
                   elevation: 0,
-                  destinations: const [
+                  destinations: [
                     NavigationDestination(
-                      icon: Icon(Icons.home_outlined),
-                      selectedIcon: Icon(Icons.home_rounded),
-                      label: 'Home',
+                      icon: const Icon(Icons.home_outlined),
+                      selectedIcon: const Icon(Icons.home_rounded),
+                      label: s.home,
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.alarm_outlined),
-                      selectedIcon: Icon(Icons.alarm_rounded),
-                      label: 'Alarm',
+                      icon: const Icon(Icons.alarm_outlined),
+                      selectedIcon: const Icon(Icons.alarm_rounded),
+                      label: s.navAlarm,
                     ),
                     NavigationDestination(
-                      icon: Icon(Icons.music_note_outlined),
-                      selectedIcon: Icon(Icons.music_note_rounded),
-                      label: 'Sounds',
+                      icon: const Icon(Icons.music_note_outlined),
+                      selectedIcon: const Icon(Icons.music_note_rounded),
+                      label: s.navSounds,
                     ),
                   ],
                 ),

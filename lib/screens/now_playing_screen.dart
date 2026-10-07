@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/sound_player_controller.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 
 class NowPlayingScreen extends StatelessWidget {
@@ -15,6 +16,7 @@ class NowPlayingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = AppTheme.isDark(context) ? AppTheme.primaryDark : AppTheme.primary;
+    final s = S.of(context);
 
     return AnimatedBuilder(
       animation: controller,
@@ -39,8 +41,8 @@ class NowPlayingScreen extends StatelessWidget {
                         onPressed: () => Navigator.of(context).pop(),
                       ),
                       const Spacer(),
-                      const Text('Now playing',
-                          style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                      Text(s.nowPlaying,
+                          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                       const Spacer(),
                       const SizedBox(width: 48),
                     ],
@@ -63,11 +65,11 @@ class NowPlayingScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(sound.name,
+                            Text(sound.displayName,
                                 style: const TextStyle(
                                     fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white)),
                             const SizedBox(height: 2),
-                            Text(sound.isImported ? 'Your sound' : 'Built-in sound',
+                            Text(sound.isImported ? s.yourSound : s.builtInSound,
                                 style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.7))),
                           ],
                         ),

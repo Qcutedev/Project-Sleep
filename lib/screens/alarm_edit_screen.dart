@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/alarm.dart';
 import '../services/alarm_notification_service.dart';
@@ -40,9 +41,13 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
   }
 
   Future<void> _pickWakeTime() async {
+    final s = S.current;
     final picked = await showTimePicker(
       context: context,
       initialTime: _wakeTime,
+      helpText: s.selectTime,
+      cancelText: s.cancel,
+      confirmText: s.ok,
       builder: (context, child) {
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
@@ -68,10 +73,13 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
     });
   }
 
+  bool _saving = false;
+
   Future<void> _saveAlarm() async {
+    if (_saving) return;
     if (_selectedOption == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a bedtime before saving')),
+        SnackBar(content: Text(S.current.selectBedtimeFirst)),
       );
       return;
     }
@@ -86,28 +94,47 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
       snoozeMinutes: _snoozeMinutes,
     );
 
-    if (widget.existingAlarm != null) {
-      await AlarmScheduler.cancelAlarm(widget.existingAlarm!);
+    setState(() => _saving = true);
+
+    // ตั้งปลุกจริงบนเครื่อง: ถ้าล้มเหลว (เช่น ยังไม่ได้อนุญาตสิทธิ์ปลุกตรงเวลา) หรือค้างนานเกินไป
+    // ก็ยังบันทึกปลุกไว้ในรายการแบบ "ปิดอยู่" แล้วกลับไปหน้า Alarm ตามปกติ
+    // แทนที่จะค้างอยู่หน้านี้เงียบๆ พร้อมแจ้งผู้ใช้ให้ไปเปิดสิทธิ์แล้วเปิดปลุกใหม่
+    var scheduled = true;
+    try {
+      if (widget.existingAlarm != null) {
+        await AlarmScheduler.cancelAlarm(widget.existingAlarm!);
+      }
+      await AlarmScheduler.scheduleAlarm(alarm).timeout(const Duration(seconds: 10));
+    } catch (_) {
+      scheduled = false;
+      alarm.isEnabled = false;
+      try {
+        await AlarmScheduler.cancelAlarm(alarm);
+      } catch (_) {}
     }
 
-    await AlarmScheduler.scheduleAlarm(alarm);
     await AlarmStorageService.instance.upsertAlarm(alarm);
 
-    final all = await AlarmStorageService.instance.loadAlarms();
-    await AlarmNotificationService.instance.syncWithAlarms(all);
-
+    // อัปเดต notification "ตั้งปลุกแล้ว" ทันที แต่ไม่รอผล (กันค้างจนปุ่มบันทึกไม่เด้งกลับ)
+    // หน้ารายการปลุกจะ sync ซ้ำให้อีกรอบตอนโหลดใหม่
+    AlarmStorageService.instance.loadAlarms().then(
+          (all) => AlarmNotificationService.instance.syncWithAlarms(all),
+        ).catchError((_) {});
     if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context, true);
+    if (!scheduled) {
+      messenger.showSnackBar(SnackBar(content: Text(S.current.alarmScheduleFailed)));
+    }
   }
 
   Future<void> _deleteAlarm() async {
     final existing = widget.existingAlarm;
     if (existing == null) return;
-    await AlarmScheduler.cancelAlarm(existing);
+    try {
+      await AlarmScheduler.cancelAlarm(existing);
+    } catch (_) {}
     await AlarmStorageService.instance.deleteAlarm(existing.id);
-
-    final all = await AlarmStorageService.instance.loadAlarms();
-    await AlarmNotificationService.instance.syncWithAlarms(all);
 
     if (!mounted) return;
     Navigator.pop(context, true);
@@ -141,6 +168,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final s = S.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 20, 18, 26),
       decoration: BoxDecoration(
@@ -174,7 +202,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
               ),
               const SizedBox(width: 10),
               Text(
-                _isEditing ? 'Edit Alarm' : 'New Alarm',
+                _isEditing ? s.editAlarm : s.newAlarm,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -186,7 +214,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            'When do you want to wake up?',
+            s.whenToWake,
             style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.85)),
           ),
           const SizedBox(height: 8),
@@ -211,12 +239,12 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
                     color: Colors.white.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.edit_outlined, color: Colors.white, size: 13),
-                      SizedBox(width: 4),
-                      Text('Change', style: TextStyle(color: Colors.white, fontSize: 12)),
+                      const Icon(Icons.edit_outlined, color: Colors.white, size: 13),
+                      const SizedBox(width: 4),
+                      Text(s.change, style: const TextStyle(color: Colors.white, fontSize: 12)),
                     ],
                   ),
                 ),
@@ -233,7 +261,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Recommended bedtime',
+          S.of(context).recommendedBedtime,
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -326,7 +354,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
                       Icon(Icons.star_rounded, size: 13, color: isSelected ? Colors.white : AppTheme.primary),
                       const SizedBox(width: 3),
                       Text(
-                        'Best',
+                        S.of(context).best,
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
@@ -346,6 +374,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
   }
 
   Widget _buildAlarmSettingsCard(BuildContext context) {
+    final s = S.of(context);
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -359,7 +388,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Repeat',
+            s.repeat,
             style: TextStyle(
               fontSize: 12.5,
               fontWeight: FontWeight.w600,
@@ -388,7 +417,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    SleepAlarm.dayLabels[i],
+                    s.dayLetters[i],
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,
@@ -403,7 +432,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'No days selected = one-time alarm only',
+              s.noDaysSelected,
               style: TextStyle(
                 fontSize: 11.5,
                 color: AppTheme.textPrimaryColor(context).withValues(alpha: 0.45),
@@ -421,7 +450,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
                   Icon(Icons.snooze, size: 17, color: AppTheme.primary),
                   const SizedBox(width: 8),
                   Text(
-                    'Snooze',
+                    s.snooze,
                     style: TextStyle(fontSize: 13.5, color: AppTheme.textPrimaryColor(context).withValues(alpha: 0.75)),
                   ),
                 ],
@@ -437,7 +466,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
                     value: _snoozeMinutes,
                     icon: Icon(Icons.expand_more, size: 18, color: AppTheme.primary),
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textPrimaryColor(context)),
-                    items: const [5, 10, 15, 20].map((m) => DropdownMenuItem(value: m, child: Text('$m min'))).toList(),
+                    items: const [5, 10, 15, 20].map((m) => DropdownMenuItem(value: m, child: Text(s.minutesShort(m)))).toList(),
                     onChanged: (v) {
                       if (v != null) setState(() => _snoozeMinutes = v);
                     },
@@ -467,10 +496,16 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
             borderRadius: BorderRadius.circular(16),
             onTap: _saveAlarm,
             child: Center(
-              child: Text(
-                _isEditing ? 'Save Changes' : 'Set Alarm',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
-              ),
+              child: _saving
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                    )
+                  : Text(
+                      _isEditing ? S.of(context).saveChanges : S.of(context).setAlarm,
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 0.3),
+                    ),
             ),
           ),
         ),
@@ -488,7 +523,7 @@ class _AlarmEditScreenState extends State<AlarmEditScreen> {
           side: BorderSide(color: Colors.red.shade300),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
-        child: Text('Delete Alarm', style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
+        child: Text(S.of(context).deleteAlarm, style: TextStyle(color: Colors.red.shade400, fontWeight: FontWeight.w600)),
       ),
     );
   }
