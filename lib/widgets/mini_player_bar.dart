@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../services/sound_player_controller.dart';
 import '../screens/now_playing_screen.dart';
 
@@ -12,6 +13,7 @@ class MiniPlayerBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     final sound = controller.currentSound;
     if (sound == null) return const SizedBox.shrink();
 
@@ -56,13 +58,13 @@ class MiniPlayerBar extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    sound.name,
+                    sound.displayName,
                     style: const TextStyle(
                         fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    controller.isPlaying ? 'Playing • looping' : 'Paused',
+                    controller.isPlaying ? s.playingLooping : s.paused,
                     style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75)),
                   ),
                 ],

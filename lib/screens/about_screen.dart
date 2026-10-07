@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 
 /// ตาม project context ข้อ 15: แอปต้องมีข้อความ disclaimer ว่าเป็น
@@ -8,8 +9,9 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = S.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('About')),
+      appBar: AppBar(title: Text(s.about)),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -23,18 +25,14 @@ class AboutScreen extends StatelessWidget {
             child: const Icon(Icons.info_outline, color: AppTheme.primary, size: 18),
           ),
           const SizedBox(height: 12),
-          const Text(
-            'About SleepWise AI',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
+          Text(
+            s.aboutTitle,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textPrimary),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'SleepWise AI is an educational prototype built for a CPE310 '
-            'course project. It estimates sleep quality (Good, Fair, or Poor) '
-            'from lifestyle inputs such as sleep duration, stress level, '
-            'physical activity, and screen time, using a machine learning '
-            'model trained by the project team.',
-            style: TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.6),
+          Text(
+            s.aboutBody,
+            style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, height: 1.6),
           ),
           const SizedBox(height: 16),
           Container(
@@ -44,17 +42,15 @@ class AboutScreen extends StatelessWidget {
               color: AppTheme.warningBg,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.warning_amber_rounded, size: 16, color: AppTheme.warningText),
-                SizedBox(width: 8),
+                const Icon(Icons.warning_amber_rounded, size: 16, color: AppTheme.warningText),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'This application is an educational prototype. It is not '
-                    'intended to diagnose, treat, or substitute advice from a '
-                    'qualified healthcare professional.',
-                    style: TextStyle(fontSize: 12, color: AppTheme.warningText, height: 1.5),
+                    s.aboutDisclaimer,
+                    style: const TextStyle(fontSize: 12, color: AppTheme.warningText, height: 1.5),
                   ),
                 ),
               ],
