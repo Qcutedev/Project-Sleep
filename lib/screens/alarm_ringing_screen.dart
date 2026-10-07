@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../services/alarm_notification_service.dart';
 
@@ -40,6 +41,7 @@ class AlarmRingingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgColor = AppTheme.isDark(context) ? AppTheme.primaryDark : AppTheme.primary;
+    final s = S.of(context);
     final time = TimeOfDay.fromDateTime(alarmSettings.dateTime);
     final timeLabel =
         '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
@@ -66,9 +68,9 @@ class AlarmRingingScreen extends StatelessWidget {
                   child: const Icon(Icons.alarm_rounded, color: Colors.white, size: 68),
                 ),
                 const SizedBox(height: 32),
-                const Text(
-                  'Time to wake up',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
+                Text(
+                  s.timeToWakeUp,
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: Colors.white),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -86,7 +88,7 @@ class AlarmRingingScreen extends StatelessWidget {
                       foregroundColor: bgColor,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
-                    child: const Text('Stop', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                    child: Text(s.stop, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -101,7 +103,7 @@ class AlarmRingingScreen extends StatelessWidget {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                     ),
                     child: Text(
-                      'Snooze $snoozeMinutes min',
+                      s.snoozeFor(snoozeMinutes),
                       style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                     ),
                   ),

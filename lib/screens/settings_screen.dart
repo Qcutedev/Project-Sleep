@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../services/notification_service.dart';
+import '../services/alarm_notification_service.dart';
+import '../services/alarm_storage_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -72,24 +75,56 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setBool(key, value);
   }
 
+  // ข้อความใน notification ถูกกำหนดตอนตั้งเวลา จึงใช้ภาษาปัจจุบัน ณ ตอนนั้น
+  Future<void> _scheduleSleepReminder() {
+    final s = S.current;
+    return NotificationService().scheduleDaily(
+      id: NotificationService.sleepReminderId,
+      hour: 22,
+      minute: 0,
+      title: s.sleepReminderNotifTitle,
+      body: s.sleepReminderNotifBody,
+    );
+  }
+
+  Future<void> _scheduleDailyReminder() {
+    final s = S.current;
+    return NotificationService().scheduleDaily(
+      id: NotificationService.dailyReminderId,
+      hour: 8,
+      minute: 0,
+      title: s.dailyReminderNotifTitle,
+      body: s.dailyReminderNotifBody,
+    );
+  }
+
+  Future<void> _changeLanguage(String value) async {
+    setState(() => _language = value);
+    AppLanguage.notifier.value = value;
+    await _saveString(_kLanguage, value);
+    // notification ที่ตั้งไว้ก่อนหน้ายังเป็นภาษาเดิม ต้องตั้งใหม่ให้ตรงกับภาษาที่เลือก
+    if (_sleepReminder) await _scheduleSleepReminder();
+    if (_dailyReminder) await _scheduleDailyReminder();
+    final alarms = await AlarmStorageService.instance.loadAlarms();
+    await AlarmNotificationService.instance.syncWithAlarms(alarms);
+  }
+
   Future<void> _confirmResetAllData() async {
+    final s = S.current;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset all data?'),
-        content: const Text(
-          'This will delete all your settings and assessment history. '
-          'This action cannot be undone.',
-        ),
+        title: Text(s.resetDialogTitle),
+        content: Text(s.resetDialogBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(s.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppTheme.poor),
-            child: const Text('Reset All Data'),
+            child: Text(s.resetAllData),
           ),
         ],
       ),
@@ -112,8 +147,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _language = 'en';
       });
       AppTheme.themeNotifier.value = ThemeMode.light;
+      AppLanguage.notifier.value = 'en';
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('All app data has been reset')),
+        SnackBar(content: Text(S.current.resetDone)),
       );
       Navigator.of(context).popUntil((route) => route.isFirst);
     }
@@ -129,15 +165,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final textSecondary = AppTheme.textSecondaryColor(context);
     final textMuted = AppTheme.textMutedColor(context);
     final border = AppTheme.borderColor(context);
+    final s = S.of(context);
 
     return Scaffold(
       backgroundColor: AppTheme.surfaceMutedColor(context),
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(s.settings)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
-          _sectionTitle(context, 'Profile'),
-          _placeholderNote(context, 'This info is used to auto-fill your Sleep Assessment'),
+          _sectionTitle(context, s.profile),
+          _placeholderNote(context, s.profileNote),
           _card(
             context,
             child: Column(
@@ -149,9 +186,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     controller: _nameController,
                     style: TextStyle(color: textPrimary),
                     decoration: InputDecoration(
-                      labelText: 'Display name',
+                      labelText: s.displayName,
                       labelStyle: TextStyle(color: textMuted),
-                      hintText: 'e.g. Alex',
+                      hintText: s.displayNameHint,
                       hintStyle: TextStyle(color: textMuted),
                       border: InputBorder.none,
                     ),
@@ -167,9 +204,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     keyboardType: TextInputType.number,
                     style: TextStyle(color: textPrimary),
                     decoration: InputDecoration(
-                      labelText: 'Age',
+                      labelText: s.age,
                       labelStyle: TextStyle(color: textMuted),
-                      hintText: 'Used to auto-fill your sleep assessment',
+                      hintText: s.ageSettingsHint,
                       hintStyle: TextStyle(color: textMuted),
                       border: InputBorder.none,
                     ),
@@ -184,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(Icons.wc_outlined, size: 20, color: textSecondary),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text('Gender', style: TextStyle(fontSize: 13, color: textPrimary)),
+                        child: Text(s.gender, style: TextStyle(fontSize: 13, color: textPrimary)),
                       ),
                     ],
                   ),
@@ -194,7 +231,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: _segmentedToggle(
                     context,
                     value: _gender,
-                    options: const {'male': 'Male', 'female': 'Female'},
+                    options: {'male': s.male, 'female': s.female},
                     onChanged: (v) {
                       setState(() => _gender = v);
                       _saveString(_kGender, v);
@@ -205,7 +242,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          _sectionTitle(context, 'Sleep Assessment Preferences'),
+          _sectionTitle(context, s.assessmentPreferences),
           _card(
             context,
             child: Column(
@@ -217,7 +254,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Icon(Icons.schedule_outlined, size: 20, color: textSecondary),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text('Sleep duration unit', style: TextStyle(fontSize: 13, color: textPrimary)),
+                        child: Text(s.durationUnit, style: TextStyle(fontSize: 13, color: textPrimary)),
                       ),
                     ],
                   ),
@@ -227,7 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: _segmentedToggle(
                     context,
                     value: _durationUnit,
-                    options: const {'hours': 'Hours', 'minutes': 'Minutes'},
+                    options: {'hours': s.hours, 'minutes': s.minutes},
                     onChanged: (v) {
                       setState(() => _durationUnit = v);
                       _saveString(_kDurationUnit, v);
@@ -238,16 +275,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          _sectionTitle(context, 'Notifications'),
+          _sectionTitle(context, s.notifications),
           _card(
             context,
             child: Column(
               children: [
                 SwitchListTile(
                   secondary: Icon(Icons.bedtime_outlined, color: textSecondary),
-                  title: Text('Sleep reminder', style: TextStyle(fontSize: 13, color: textPrimary)),
+                  title: Text(s.sleepReminder, style: TextStyle(fontSize: 13, color: textPrimary)),
                   subtitle: Text(
-                    'Reminds you to go to bed every day at 10:00 PM',
+                    s.sleepReminderSubtitle,
                     style: TextStyle(fontSize: 11, color: textMuted),
                   ),
                   value: _sleepReminder,
@@ -256,13 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     setState(() => _sleepReminder = v);
                     await _saveBool(_kSleepReminder, v);
                     if (v) {
-                      await NotificationService().scheduleDaily(
-                        id: NotificationService.sleepReminderId,
-                        hour: 22,
-                        minute: 0,
-                        title: 'Time to sleep 🌙',
-                        body: 'Head to bed now for better sleep quality tonight.',
-                      );
+                      await _scheduleSleepReminder();
                     } else {
                       await NotificationService().cancel(NotificationService.sleepReminderId);
                     }
@@ -271,9 +302,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 Divider(height: 1, color: border),
                 SwitchListTile(
                   secondary: Icon(Icons.notifications_outlined, color: textSecondary),
-                  title: Text('Daily reminder', style: TextStyle(fontSize: 13, color: textPrimary)),
+                  title: Text(s.dailyReminder, style: TextStyle(fontSize: 13, color: textPrimary)),
                   subtitle: Text(
-                    'Reminds you to complete your sleep assessment every day at 8:00 AM',
+                    s.dailyReminderSubtitle,
                     style: TextStyle(fontSize: 11, color: textMuted),
                   ),
                   value: _dailyReminder,
@@ -282,13 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     setState(() => _dailyReminder = v);
                     await _saveBool(_kDailyReminder, v);
                     if (v) {
-                      await NotificationService().scheduleDaily(
-                        id: NotificationService.dailyReminderId,
-                        hour: 8,
-                        minute: 0,
-                        title: 'Check in on your sleep 📝',
-                        body: 'Complete today\'s sleep assessment — it only takes a minute.',
-                      );
+                      await _scheduleDailyReminder();
                     } else {
                       await NotificationService().cancel(NotificationService.dailyReminderId);
                     }
@@ -298,7 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          _sectionTitle(context, 'Appearance'),
+          _sectionTitle(context, s.appearance),
           _card(
             context,
             child: RadioGroup<String>(
@@ -324,21 +349,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _radioRow(
                     context,
                     icon: Icons.light_mode_outlined,
-                    label: 'Light',
+                    label: s.light,
                     value: 'light',
                   ),
                   Divider(height: 1, color: border),
                   _radioRow(
                     context,
                     icon: Icons.dark_mode_outlined,
-                    label: 'Dark',
+                    label: s.dark,
                     value: 'dark',
                   ),
                   Divider(height: 1, color: border),
                   _radioRow(
                     context,
                     icon: Icons.settings_suggest_outlined,
-                    label: 'System default',
+                    label: s.systemDefault,
                     value: 'system',
                   ),
                 ],
@@ -346,23 +371,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          _sectionTitle(context, 'Language'),
-          _placeholderNote(context, 'App text stays in English for now — this choice is saved for later'),
+          _sectionTitle(context, s.language),
           _card(
             context,
             child: RadioGroup<String>(
               groupValue: _language,
               onChanged: (v) {
                 if (v == null) return;
-                setState(() => _language = v);
-                _saveString(_kLanguage, v);
+                _changeLanguage(v);
               },
               child: Column(
                 children: [
                   _radioRow(
                     context,
                     icon: Icons.language_rounded,
-                    label: 'Thai',
+                    label: 'ไทย',
                     value: 'th',
                   ),
                   Divider(height: 1, color: border),
@@ -377,7 +400,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          _sectionTitle(context, 'Privacy'),
+          _sectionTitle(context, s.privacy),
           _card(
             context,
             child: Padding(
@@ -385,17 +408,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _PrivacyLine(text: 'Data you enter is used only to run the sleep assessment.', color: textSecondary),
+                  _PrivacyLine(text: s.privacyLine1, color: textSecondary),
                   const SizedBox(height: 8),
-                  _PrivacyLine(text: 'This app is an educational prototype.', color: textSecondary),
+                  _PrivacyLine(text: s.privacyLine2, color: textSecondary),
                   const SizedBox(height: 8),
-                  _PrivacyLine(text: 'It is not a medical diagnostic system.', color: textSecondary),
+                  _PrivacyLine(text: s.privacyLine3, color: textSecondary),
                 ],
               ),
             ),
           ),
 
-          _sectionTitle(context, 'About'),
+          _sectionTitle(context, s.about),
           _card(
             context,
             child: Padding(
@@ -421,7 +444,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           children: [
                             Text('SleepWise AI', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: textPrimary)),
                             const SizedBox(height: 2),
-                            Text('Version $_appVersion', style: TextStyle(fontSize: 11, color: textMuted)),
+                            Text(s.versionLabel(_appVersion), style: TextStyle(fontSize: 11, color: textMuted)),
                           ],
                         ),
                       ),
@@ -429,14 +452,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'CPE310 — Healthcare AI Project',
+                    s.projectName,
                     style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: textSecondary),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'A prototype mobile app that estimates sleep quality from a short '
-                    'daily check-in, built as a class project to explore how a simple '
-                    'ML model can be paired with a friendly, easy-to-use interface.',
+                    s.projectDescription,
                     style: TextStyle(fontSize: 12, color: textMuted, height: 1.4),
                   ),
                 ],
@@ -444,35 +465,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
 
-          _sectionTitle(context, 'Reset App Data'),
+          _sectionTitle(context, s.resetAppData),
           _card(
             context,
             child: ListTile(
               leading: const Icon(Icons.delete_forever_outlined, color: AppTheme.poor),
-              title: const Text(
-                'Reset All Data',
-                style: TextStyle(color: AppTheme.poor, fontWeight: FontWeight.w600, fontSize: 13),
+              title: Text(
+                s.resetAllData,
+                style: const TextStyle(color: AppTheme.poor, fontWeight: FontWeight.w600, fontSize: 13),
               ),
               subtitle: Text(
-                'Deletes settings and all saved check-ins from this device',
+                s.resetAllDataSubtitle,
                 style: TextStyle(fontSize: 11, color: textMuted),
               ),
               onTap: _confirmResetAllData,
             ),
           ),
 
-          _sectionTitle(context, 'App Information'),
+          _sectionTitle(context, s.appInformation),
           _card(
             context,
             child: Column(
               children: [
-                _infoRow(context, 'App name', 'SleepWise AI'),
+                _infoRow(context, s.appNameLabel, 'SleepWise AI'),
                 Divider(height: 1, color: border),
-                _infoRow(context, 'Version', _appVersion),
+                _infoRow(context, s.version, _appVersion),
                 Divider(height: 1, color: border),
-                _infoRow(context, 'Developer / Team', 'SleepWise AI Team'),
+                _infoRow(context, s.developerTeam, 'SleepWise AI Team'),
                 Divider(height: 1, color: border),
-                _infoRow(context, 'Course', 'CPE310'),
+                _infoRow(context, s.course, 'CPE310'),
               ],
             ),
           ),

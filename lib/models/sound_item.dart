@@ -1,3 +1,5 @@
+import '../l10n/app_strings.dart';
+
 class SoundItem {
   final String id;
   final String name;
@@ -14,6 +16,10 @@ class SoundItem {
     this.filePath,
     this.isImported = false,
   });
+
+  /// ชื่อที่ใช้แสดงผลตามภาษาปัจจุบัน (เสียงที่นำเข้าเองใช้ชื่อไฟล์ตามเดิม)
+  String get displayName =>
+      S.current.soundName(id: id, name: name, isImported: isImported);
 
   Map<String, dynamic> toJson() => {
         'id': id,

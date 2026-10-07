@@ -1,4 +1,5 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../l10n/app_strings.dart';
 import '../models/alarm.dart';
 import 'alarm_scheduler_service.dart';
 
@@ -60,9 +61,10 @@ class AlarmNotificationService {
 
     await init();
     final timeStr = '${earliest.hour.toString().padLeft(2, '0')}:${earliest.minute.toString().padLeft(2, '0')}';
+    final s = S.current;
     final body = enabled.length > 1
-        ? 'Next alarm at $timeStr • ${enabled.length} alarms active'
-        : 'Next alarm at $timeStr';
+        ? s.nextAlarmAtWithCount(timeStr, enabled.length)
+        : s.nextAlarmAt(timeStr);
 
     const androidDetails = AndroidNotificationDetails(
       'alarm_set_channel',
@@ -78,7 +80,7 @@ class AlarmNotificationService {
 
     await _plugin.show(
       id: _setNotificationId,
-      title: '⏰ Alarm set',
+      title: s.alarmSetNotifTitle,
       body: body,
       notificationDetails: const NotificationDetails(android: androidDetails, iOS: iosDetails),
     );
@@ -106,8 +108,8 @@ class AlarmNotificationService {
 
     await _plugin.show(
       id: _setNotificationId,
-      title: '⏰ Alarm set',
-      body: 'Snoozed until $timeStr',
+      title: S.current.alarmSetNotifTitle,
+      body: S.current.snoozedUntil(timeStr),
       notificationDetails: const NotificationDetails(android: androidDetails, iOS: iosDetails),
     );
   }

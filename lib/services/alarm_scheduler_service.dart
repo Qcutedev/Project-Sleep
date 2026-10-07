@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:alarm/alarm.dart';
+import '../l10n/app_strings.dart';
 import '../models/alarm.dart';
 
 /// คำนวณเวลาปลุกครั้งถัดไปตาม repeat days จริง และจัดการ native alarm (ผ่านแพ็กเกจ alarm)
@@ -61,6 +62,7 @@ class AlarmScheduler {
   }
 
   static Future<void> _setNative(int nativeId, DateTime dateTime) async {
+    final s = S.current;
     final settings = AlarmSettings(
       id: nativeId,
       dateTime: dateTime,
@@ -72,10 +74,10 @@ class AlarmScheduler {
         volume: 0.8,
         fadeDuration: const Duration(seconds: 5),
       ),
-      notificationSettings: const NotificationSettings(
-        title: 'Sleep Cycle Alarm',
-        body: 'Time to wake up!',
-        stopButton: 'Stop',
+      notificationSettings: NotificationSettings(
+        title: s.sleepCycleAlarm,
+        body: s.alarmRingNotifBody,
+        stopButton: s.stop,
       ),
     );
     await Alarm.set(alarmSettings: settings);

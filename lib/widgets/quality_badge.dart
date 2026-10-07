@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 
 /// ป้ายสีเล็กๆ แสดงคำว่า Good / Fair / Poor
@@ -20,7 +21,7 @@ class QualityBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
-        quality,
+        S.of(context).quality(quality),
         style: TextStyle(
           color: color,
           fontSize: fontSize,
