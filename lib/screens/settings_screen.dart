@@ -5,6 +5,9 @@ import '../theme/app_theme.dart';
 import '../services/notification_service.dart';
 import '../services/alarm_notification_service.dart';
 import '../services/alarm_storage_service.dart';
+import '../services/profile_service.dart';
+import '../widgets/profile_avatar.dart';
+import 'profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -14,20 +17,13 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const _kDisplayName = 'settings_display_name';
-  static const _kAge = 'settings_age';
-  static const _kGender = 'settings_gender';
   static const _kDurationUnit = 'settings_duration_unit';
   static const _kSleepReminder = 'settings_sleep_reminder';
   static const _kDailyReminder = 'settings_daily_reminder';
   static const _kAppearance = 'settings_appearance';
   static const _kLanguage = 'settings_language';
 
-  final _nameController = TextEditingController();
-  final _ageController = TextEditingController();
-
   bool _loading = true;
-  String _gender = ''; // '' = not set, 'male' / 'female'
   String _durationUnit = 'hours';
   bool _sleepReminder = false;
   bool _dailyReminder = false;
@@ -42,20 +38,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _loadSettings();
   }
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _ageController.dispose();
-    super.dispose();
-  }
-
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     if (!mounted) return;
     setState(() {
-      _nameController.text = prefs.getString(_kDisplayName) ?? '';
-      _ageController.text = prefs.getString(_kAge) ?? '';
-      _gender = prefs.getString(_kGender) ?? '';
       _durationUnit = prefs.getString(_kDurationUnit) ?? 'hours';
       _sleepReminder = prefs.getBool(_kSleepReminder) ?? false;
       _dailyReminder = prefs.getBool(_kDailyReminder) ?? false;
@@ -133,13 +119,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (confirmed == true) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
+      await ProfileService.instance.clearAfterReset();
       await NotificationService().cancel(NotificationService.sleepReminderId);
       await NotificationService().cancel(NotificationService.dailyReminderId);
       if (!mounted) return;
       setState(() {
-        _nameController.clear();
-        _ageController.clear();
-        _gender = '';
         _durationUnit = 'hours';
         _sleepReminder = false;
         _dailyReminder = false;
@@ -174,71 +158,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
         children: [
           _sectionTitle(context, s.profile),
-          _placeholderNote(context, s.profileNote),
           _card(
             context,
-            child: Column(
-              children: [
-                _iconRow(
-                  context,
-                  icon: Icons.person_outline,
-                  child: TextField(
-                    controller: _nameController,
-                    style: TextStyle(color: textPrimary),
-                    decoration: InputDecoration(
-                      labelText: s.displayName,
-                      labelStyle: TextStyle(color: textMuted),
-                      hintText: s.displayNameHint,
-                      hintStyle: TextStyle(color: textMuted),
-                      border: InputBorder.none,
+            child: ValueListenableBuilder<UserProfile>(
+              valueListenable: ProfileService.instance.profile,
+              builder: (context, profile, _) {
+                return ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
+                  leading: ProfileAvatar(profile: profile, size: 46),
+                  title: Text(
+                    profile.name.isEmpty ? s.setUpProfile : profile.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: textPrimary,
                     ),
-                    onChanged: (v) => _saveString(_kDisplayName, v),
                   ),
-                ),
-                Divider(height: 1, color: border),
-                _iconRow(
-                  context,
-                  icon: Icons.cake_outlined,
-                  child: TextField(
-                    controller: _ageController,
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(color: textPrimary),
-                    decoration: InputDecoration(
-                      labelText: s.age,
-                      labelStyle: TextStyle(color: textMuted),
-                      hintText: s.ageSettingsHint,
-                      hintStyle: TextStyle(color: textMuted),
-                      border: InputBorder.none,
-                    ),
-                    onChanged: (v) => _saveString(_kAge, v),
+                  subtitle: Text(
+                    s.profileSettingsSubtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 11, color: textMuted),
                   ),
-                ),
-                Divider(height: 1, color: border),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-                  child: Row(
-                    children: [
-                      Icon(Icons.wc_outlined, size: 20, color: textSecondary),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(s.gender, style: TextStyle(fontSize: 13, color: textPrimary)),
-                      ),
-                    ],
+                  trailing: Icon(Icons.chevron_right_rounded, color: textMuted),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ProfileScreen()),
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(48, 4, 16, 14),
-                  child: _segmentedToggle(
-                    context,
-                    value: _gender,
-                    options: {'male': s.male, 'female': s.female},
-                    onChanged: (v) {
-                      setState(() => _gender = v);
-                      _saveString(_kGender, v);
-                    },
-                  ),
-                ),
-              ],
+                );
+              },
             ),
           ),
 
@@ -517,16 +469,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _placeholderNote(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context), fontStyle: FontStyle.italic),
-      ),
-    );
-  }
-
   Widget _card(BuildContext context, {required Widget child}) {
     return Container(
       decoration: BoxDecoration(
@@ -542,19 +484,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       clipBehavior: Clip.antiAlias,
       child: child,
-    );
-  }
-
-  Widget _iconRow(BuildContext context, {required IconData icon, required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-      child: Row(
-        children: [
-          Icon(icon, size: 20, color: AppTheme.textSecondaryColor(context)),
-          const SizedBox(width: 12),
-          Expanded(child: child),
-        ],
-      ),
     );
   }
 

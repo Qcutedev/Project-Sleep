@@ -7,6 +7,19 @@ enum TrendMetric { score, duration, stress, activity }
 
 DateTime dateOnly(DateTime dt) => DateTime(dt.year, dt.month, dt.day);
 
+/// จำนวนวันที่เช็กอินติดต่อกัน นับย้อนจากวันล่าสุดที่มีการเช็กอิน
+int checkInStreak(List<SleepResult> history) {
+  if (history.isEmpty) return 0;
+  final days = history.map((r) => dateOnly(r.timestamp)).toSet().toList()
+    ..sort((a, b) => b.compareTo(a));
+  var streak = 1;
+  for (var i = 0; i < days.length - 1; i++) {
+    if (daysBetween(days[i + 1], days[i]) != 1) break;
+    streak++;
+  }
+  return streak;
+}
+
 /// จำนวนวันตามปฏิทินจาก [from] ถึง [to] (ไม่สนเวลาในวัน)
 int daysBetween(DateTime from, DateTime to) =>
     DateTime.utc(to.year, to.month, to.day)
