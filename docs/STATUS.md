@@ -25,7 +25,6 @@
 
 | ปัญหา | ที่ไหน |
 |---|---|
-| `flutter test` ไม่ผ่าน เพราะ Splash ทิ้ง timer ค้าง | `test/widget_test.dart`, `splash_screen.dart` |
 | หน้า About ใช้สีคงที่ ไม่รองรับโหมดมืด | `about_screen.dart` |
 | หน้า About เขียนว่าโมเดลใช้ "screen time" แต่แอปไม่ได้เก็บค่านี้และ backend ไม่ได้รับ | `aboutBody` ใน `app_strings.dart` |
 | mini player ขึ้นว่า "กำลังเล่น • วนซ้ำ" เสมอ แม้ปิดโหมดวนซ้ำ | `mini_player_bar.dart` |
