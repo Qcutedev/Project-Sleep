@@ -61,7 +61,7 @@ C:\Project SLEEP\            โฟลเดอร์ที่เปิดใน
 - `theme/app_theme.dart` — สี ธีมสว่าง/มืด และตัวสลับธีม
 - `models/` — `sleep_assessment_input`, `sleep_result`, `alarm` (รวมฟังก์ชันคำนวณเวลาเข้านอน), `sound_item`
   - `sound_track.dart` ไม่มีไฟล์ไหนเรียกใช้ เป็นของเก่าที่ค้างอยู่
-- `widgets/` — `quality_badge`, `stat_chip`, `mini_player_bar`, `sleep_trend_chart` (กราฟที่ใช้ร่วมกันทั้ง Home และ Stats)
+- `widgets/` — `quality_badge`, `stat_chip`, `mini_player_bar`, `sleep_trend_chart` (กราฟที่ใช้ร่วมกันทั้ง Home และ Stats), `sleeping_mascot` (มาสคอตนอนหลับในหน้า Loading วาดด้วย `CustomPaint` ไม่มีไฟล์รูป)
 
 ## การเริ่มแอป (`lib/main.dart`)
 
