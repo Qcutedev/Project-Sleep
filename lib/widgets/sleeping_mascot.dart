@@ -2,7 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-/// มาสคอตของแอป: ลูกหมาขนฟูหูยาวใส่หมวกนอน หลับอยู่บนหมอน
+/// มาสคอตของแอป: ตัวสีขาวหูยาวกางสองข้าง หางม้วน หลับอยู่บนหมอน
+/// (หน้าตาตามตัวละคร Cinnamoroll ที่เจ้าของโปรเจคเลือก ตัวเดียวกับ `HomePet`)
 /// ใช้เป็นอนิเมชันระหว่างรอผลวิเคราะห์
 ///
 /// วาดด้วย CustomPaint ทั้งหมด ไม่มีไฟล์รูปหรือแพ็กเกจอนิเมชัน
@@ -86,8 +87,11 @@ class _MascotPainter extends CustomPainter {
   // หายใจ 1 ครั้งใช้ 3 วินาที (4 ครั้งต่อรอบ)
   static const double _breathSeconds = 3;
 
-  static const Color _blush = Color(0xFFFFB3C7);
+  static const Color _blush = Color(0xFFFBC4D8);
   static const Color _gold = Color(0xFFF5C454);
+  static const Color _ink = Color(0xFF1A1A1A); // เส้นขอบของตัวมาสคอต
+  static const Color _eye = Color(0xFF45B5F0);
+  static const Offset _head = Offset(130, 128);
 
   final Animation<double> animation;
   final bool isDark;
@@ -99,10 +103,12 @@ class _MascotPainter extends CustomPainter {
     required this.showBackdrop,
   }) : super(repaint: animation);
 
+  // สีเส้นของหมอนและตัว Z ตามธีม ส่วนตัวมาสคอตใช้ขาวขอบดำเสมอ
   Color get _line => isDark ? AppTheme.accent : AppTheme.primary;
-  Color get _fur => isDark ? const Color(0xFFF4F3FF) : Colors.white;
 
-  Paint get _furPaint => Paint()..color = _fur;
+  Paint get _furPaint => Paint()..color = Colors.white;
+
+  Paint _ink3([double width = 3]) => _stroke(width, _ink);
 
   Paint _stroke(double width, [Color? color]) => Paint()
     ..color = color ?? _line
@@ -135,7 +141,7 @@ class _MascotPainter extends CustomPainter {
     final seconds = t * loopSeconds;
     final breathPhase = seconds / _breathSeconds;
     final breath = _breath(breathPhase);
-    // ส่วนที่นุ่ม (หู หาง หมวก) ขยับตามหลังตัวนิดหนึ่ง
+    // ส่วนที่นุ่ม (หู หาง) ขยับตามหลังตัวนิดหนึ่ง
     final lagBreath = _breath(breathPhase - 0.12);
 
     // เหตุการณ์นานๆ ครั้ง ให้ไม่ดูวนซ้ำ
@@ -159,18 +165,10 @@ class _MascotPainter extends CustomPainter {
     _paintTail(canvas, lagBreath, tailWag);
     _paintBody(canvas, breath);
 
-    // หัว หู หมวก และหน้า ขยับขึ้นลงไปด้วยกัน
+    // หัว หู และหน้า ขยับขึ้นลงไปด้วยกัน
     canvas.save();
     canvas.translate(0, -2.5 * breath);
-    _paintEar(canvas, const Offset(152, 106), 30 - 4 * lagBreath, false);
-    _paintEar(
-      canvas,
-      const Offset(74, 106),
-      35 - 4 * lagBreath - 12 * earTwitch,
-      true,
-    );
-    _paintHead(canvas);
-    _paintCap(canvas, lagBreath);
+    _paintHead(canvas, lagBreath, earTwitch);
     _paintFace(canvas, breath, mumble, mumbleU != null);
     canvas.restore();
 
@@ -276,20 +274,20 @@ class _MascotPainter extends CustomPainter {
     );
   }
 
+  /// หางม้วนเป็นวงเหมือนซินนามอนโรล
   void _paintTail(Canvas canvas, double lagBreath, double wag) {
     canvas.save();
-    canvas.translate(206, 136);
+    canvas.translate(204, 112);
     canvas.rotate((-3 * lagBreath + 16 * wag) * math.pi / 180);
-    const c = Offset(9, -17);
-    canvas.drawCircle(c, 13, _furPaint);
-    canvas.drawCircle(c, 13, _stroke(3));
-    // ลายม้วนเล็กๆ บนหาง
+    const c = Offset(10, -12);
+    canvas.drawCircle(c, 14, _furPaint);
+    canvas.drawCircle(c, 14, _ink3());
     canvas.drawArc(
-      Rect.fromCircle(center: c, radius: 6),
-      -0.4,
-      3.6,
+      Rect.fromCircle(center: c + const Offset(1, 0.5), radius: 6.5),
+      0.6,
+      4.3,
       false,
-      _stroke(2.2, _line.withValues(alpha: 0.55)),
+      _ink3(2.4),
     );
     canvas.restore();
   }
@@ -297,116 +295,110 @@ class _MascotPainter extends CustomPainter {
   void _paintBody(Canvas canvas, double breath) {
     // ยืดขึ้นและแคบลงตอนหายใจเข้า โดยยึดจุดที่ตัวแตะหมอนไว้
     canvas.save();
-    canvas.translate(166, 162);
+    canvas.translate(176, 152);
     canvas.scale(1 - 0.025 * breath, 1 + 0.09 * breath);
-    canvas.translate(-166, -162);
+    canvas.translate(-176, -152);
     final body = Rect.fromCenter(
-      center: const Offset(166, 134),
-      width: 100,
-      height: 56,
+      center: const Offset(176, 122),
+      width: 88,
+      height: 60,
     );
     canvas.drawOval(body, _furPaint);
-    canvas.drawOval(body, _stroke(3));
+    canvas.drawOval(body, _ink3());
     canvas.restore();
   }
 
-  void _paintEar(Canvas canvas, Offset pivot, double degrees, bool mirror) {
-    canvas.save();
-    canvas.translate(pivot.dx, pivot.dy);
-    if (mirror) canvas.scale(-1, 1);
-    canvas.rotate(degrees * math.pi / 180);
-    const len = 56.0;
+  Path _earPath(double side, double droop) {
+    const length = 70.0;
     final ear = Path()
-      ..moveTo(-4, -8)
-      ..cubicTo(len * 0.35, -19, len * 0.95, -19, len, -2)
-      ..cubicTo(len * 1.03, 15, len * 0.4, 15, -4, 10)
+      ..moveTo(-10, -15)
+      ..cubicTo(length * 0.35, -25, length * 0.95, -28.5, length, -3.5)
+      ..cubicTo(length * 1.04, 23.5, length * 0.45, 22, -10, 15)
       ..close();
-    canvas.drawPath(ear, _furPaint);
-    canvas.drawPath(ear, _stroke(3));
-    canvas.restore();
+    final matrix = Matrix4.identity()
+      ..translateByDouble(_head.dx + side * 35, _head.dy - 18, 0, 1)
+      ..scaleByDouble(side, 1, 1, 1)
+      ..rotateZ(droop);
+    return ear.transform(matrix.storage);
   }
 
-  void _paintHead(Canvas canvas) {
-    final head = Rect.fromCenter(
-      center: const Offset(112, 128),
-      width: 108,
-      height: 76,
+  /// หัวกับหูสองข้างรวมเป็นรูปทรงเดียว เส้นขอบจึงต่อเนื่องกันเหมือนในภาพต้นแบบ
+  void _paintHead(Canvas canvas, double lagBreath, double earTwitch) {
+    // หูแผ่ลงบนหมอน ยกขึ้นนิดหนึ่งตอนหายใจเข้า หูซ้ายกระดิกเป็นบางครั้ง
+    final droop = 0.5 - 0.07 * lagBreath;
+    var shape = Path()
+      ..addOval(Rect.fromCenter(center: _head, width: 104, height: 76));
+    shape = Path.combine(
+      PathOperation.union,
+      shape,
+      _earPath(-1, droop - 0.22 * earTwitch),
     );
-    canvas.drawOval(head, _furPaint);
-    canvas.drawOval(head, _stroke(3));
-  }
+    shape = Path.combine(PathOperation.union, shape, _earPath(1, droop));
+    canvas.drawPath(shape, _furPaint);
+    canvas.drawPath(shape, _ink3());
 
-  void _paintCap(Canvas canvas, double lagBreath) {
-    // ปลายหมวกห้อยและแกว่งตามจังหวะหายใจ
-    final sway = 3 * lagBreath;
-    final tip = Offset(160, 86 + sway);
-    final cap = Path()
-      ..moveTo(84, 97)
-      ..cubicTo(86, 72, 112, 58, 138, 66)
-      ..cubicTo(150, 70, 158, 78 + sway, tip.dx, tip.dy)
-      ..cubicTo(150, 80 + sway, 142, 82, 138, 96)
-      ..quadraticBezierTo(111, 85, 84, 97)
-      ..close();
-    canvas.drawPath(
-      cap,
-      Paint()..color = isDark ? const Color(0xFF8E87F0) : AppTheme.accent,
-    );
-    canvas.drawPath(cap, _stroke(3));
-
-    // ขอบหมวก
-    final band = Path()
-      ..moveTo(84, 97)
-      ..quadraticBezierTo(111, 85, 138, 96);
-    canvas.drawPath(band, _stroke(11));
-    canvas.drawPath(band, _stroke(6, _fur));
-
-    // ปุยปลายหมวก
-    final pom = Offset(tip.dx + 2, tip.dy + 5);
-    canvas.drawCircle(pom, 7, Paint()..color = _gold);
-    canvas.drawCircle(pom, 7, _stroke(2.5));
+    // รอยพับที่โคนหู
+    for (final side in const [-1.0, 1.0]) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(_head.dx + side * 41, _head.dy - 12)
+          ..quadraticBezierTo(
+            _head.dx + side * 45.5,
+            _head.dy - 2,
+            _head.dx + side * 43.5,
+            _head.dy + 8,
+          ),
+        _ink3(2.4),
+      );
+    }
   }
 
   void _paintFace(Canvas canvas, double breath, double mumble, bool mumbling) {
-    final blush = Paint()..color = _blush.withValues(alpha: 0.85);
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(78, 140), width: 17, height: 10),
-      blush,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: const Offset(146, 140), width: 17, height: 10),
-      blush,
-    );
-
-    final eye = _stroke(3);
-    for (final cx in const [92.0, 132.0]) {
-      canvas.drawPath(
-        Path()
-          ..moveTo(cx - 7, 127)
-          ..quadraticBezierTo(cx, 134, cx + 7, 127),
-        eye,
+    final blush = Paint()..color = _blush;
+    for (final side in const [-1.0, 1.0]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: _head + Offset(side * 34.5, 15.5),
+          width: 21,
+          height: 12.5,
+        ),
+        blush,
+      );
+      // ตาหลับเป็นเส้นสีฟ้าเฉียงลงด้านนอก
+      final eye = _head + Offset(side * 25, 2);
+      canvas.drawLine(
+        eye + Offset(-side * 8, -1.3),
+        eye + Offset(side * 8, 3),
+        _stroke(5, _eye),
       );
     }
 
+    final mouth = _head + const Offset(0, 14.5);
     if (mumbling) {
       // ละเมอ: ปากขยับเปิดปิด
-      final mouth = Rect.fromCenter(
-        center: const Offset(112, 140),
-        width: 8,
-        height: 3 + 5 * mumble,
+      final open = Rect.fromCenter(
+        center: mouth + const Offset(0, 2.5),
+        width: 11,
+        height: 4 + 7 * mumble,
       );
-      canvas.drawOval(mouth, Paint()..color = _blush);
-      canvas.drawOval(mouth, _stroke(2.2));
+      canvas.drawOval(open, Paint()..color = const Color(0xFFFF9DB8));
+      canvas.drawOval(open, _ink3(2.6));
     } else {
       canvas.drawPath(
         Path()
-          ..moveTo(105, 138)
-          ..quadraticBezierTo(108.5, 143, 112, 138)
-          ..quadraticBezierTo(115.5, 143, 119, 138),
-        _stroke(2.4),
+          ..moveTo(mouth.dx - 9.5, mouth.dy - 1)
+          ..quadraticBezierTo(mouth.dx - 5, mouth.dy + 7.5, mouth.dx, mouth.dy)
+          ..quadraticBezierTo(
+            mouth.dx + 5,
+            mouth.dy + 7.5,
+            mouth.dx + 9.5,
+            mouth.dy - 1,
+          ),
+        _ink3(3.2),
       );
       // ฟองน้ำมูก พองตอนหายใจออก หดตอนหายใจเข้า
       final r = 2.5 + 7.5 * (1 - breath);
-      final c = Offset(120 + r * 0.75, 134 + r * 0.45);
+      final c = mouth + Offset(9 + r * 0.75, -3 + r * 0.45);
       canvas.drawCircle(
         c,
         r,
@@ -430,14 +422,14 @@ class _MascotPainter extends CustomPainter {
   }
 
   void _paintPaws(Canvas canvas) {
-    for (final cx in const [88.0, 136.0]) {
+    for (final side in const [-1.0, 1.0]) {
       final paw = Rect.fromCenter(
-        center: Offset(cx, 161),
-        width: 23,
-        height: 15,
+        center: Offset(_head.dx + side * 25, 162),
+        width: 25,
+        height: 16,
       );
       canvas.drawOval(paw, _furPaint);
-      canvas.drawOval(paw, _stroke(3));
+      canvas.drawOval(paw, _ink3());
     }
   }
 
