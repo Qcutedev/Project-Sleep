@@ -22,7 +22,7 @@ C:\Project SLEEP\            โฟลเดอร์ที่เปิดใน
 
 | ไฟล์ | หน้าที่ |
 |---|---|
-| `splash_screen.dart` | อนิเมชันเปิดแอป ราว 5 วินาที แล้วสลับไป `MainShell` |
+| `splash_screen.dart` | อนิเมชันเปิดแอป 4.5 วินาที (ท้องฟ้ากลางคืน โลโก้ที่ขยับได้ และชื่อแอป) แล้วจางเข้า `MainShell` โลโก้ในหน้านี้วาดด้วยโค้ดใน `_LogoPainter` ตามสัดส่วนของ `assets/images/logo.png` ถ้าเปลี่ยนโลโก้ต้องแก้ทั้งสองที่ |
 | `main_shell.dart` | เปลือกหลัก มี bottom navigation 3 แท็บ (Home / Alarm / Sounds) เก็บ state ด้วย `IndexedStack` และถือ `SoundPlayerController` ตัวเดียวของทั้งแอป |
 | `home_screen.dart` | หัวทักทาย, การ์ดสถิติ, กราฟแนวโน้ม, รายการเช็กอินล่าสุด, เมนู drawer |
 | `assessment_screen.dart` | ฟอร์มกรอกข้อมูล 5 ค่า แล้วส่งต่อให้ `LoadingScreen` |

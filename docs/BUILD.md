@@ -78,7 +78,7 @@ cp build/app/outputs/flutter-apk/app-release.apk "$USERPROFILE/OneDrive/Desktop/
 
 ### เทสต์ที่มีอยู่
 
-`flutter test` จะ **ไม่ผ่าน** ที่ `test/widget_test.dart` ("App starts without crashing") เพราะ `SplashScreen` ทิ้ง timer ค้างตอนเทสต์จบ เป็นปัญหาเดิมของเทสต์ ไม่ได้บอกว่าแอปพัง อย่ารายงานว่าเทสต์ผ่าน และอย่าถือว่าการแก้ของตัวเองทำพังถ้าเห็นข้อผิดพลาดนี้
+`flutter test` มีแค่ `test/widget_test.dart` ("App starts without crashing") ซึ่งเช็กแค่ว่าหน้า Splash ขึ้นได้ ผ่านแล้วไม่ได้แปลว่าหน้าอื่นใช้ได้
 
 ## มือถือที่ใช้ทดสอบ
 

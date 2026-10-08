@@ -10,7 +10,18 @@ import '../theme/app_theme.dart';
 class SleepingMascot extends StatefulWidget {
   final double width;
 
-  const SleepingMascot({super.key, this.width = 260});
+  /// วงกลมพื้นหลัง พระจันทร์ ดาว และเมฆ ปิดได้เมื่อวางบนฉากที่มีของพวกนี้อยู่แล้ว
+  final bool showBackdrop;
+
+  /// บังคับใช้ชุดสีสำหรับพื้นเข้ม ไม่ว่าธีมของแอปเป็นแบบไหน (เช่นบนหน้า Splash)
+  final bool forceDark;
+
+  const SleepingMascot({
+    super.key,
+    this.width = 260,
+    this.showBackdrop = true,
+    this.forceDark = false,
+  });
 
   @override
   State<SleepingMascot> createState() => _SleepingMascotState();
@@ -58,7 +69,8 @@ class _SleepingMascotState extends State<SleepingMascot>
         child: CustomPaint(
           painter: _MascotPainter(
             animation: _controller,
-            isDark: AppTheme.isDark(context),
+            isDark: widget.forceDark || AppTheme.isDark(context),
+            showBackdrop: widget.showBackdrop,
           ),
         ),
       ),
@@ -79,9 +91,13 @@ class _MascotPainter extends CustomPainter {
 
   final Animation<double> animation;
   final bool isDark;
+  final bool showBackdrop;
 
-  _MascotPainter({required this.animation, required this.isDark})
-      : super(repaint: animation);
+  _MascotPainter({
+    required this.animation,
+    required this.isDark,
+    required this.showBackdrop,
+  }) : super(repaint: animation);
 
   Color get _line => isDark ? AppTheme.accent : AppTheme.primary;
   Color get _fur => isDark ? const Color(0xFFF4F3FF) : Colors.white;
@@ -137,7 +153,7 @@ class _MascotPainter extends CustomPainter {
         : math.sin(math.pi * mumbleU) *
             (0.5 + 0.5 * math.sin(8 * math.pi * mumbleU));
 
-    _paintBackdrop(canvas, t);
+    if (showBackdrop) _paintBackdrop(canvas, t);
     _paintPillow(canvas, breath);
 
     _paintTail(canvas, lagBreath, tailWag);
@@ -449,7 +465,12 @@ class _MascotPainter extends CustomPainter {
           ..lineTo(s / 2, -s / 2)
           ..lineTo(-s / 2, s / 2)
           ..lineTo(s / 2, s / 2),
-        _stroke(s * 0.26, _line.withValues(alpha: opacity)),
+        _stroke(
+          s * 0.26,
+          // บนพื้นเข้มใช้สีอ่อนกว่าเส้นขอบ ไม่อย่างนั้นตัว Z จะกลืนกับพื้นหลัง
+          (isDark ? const Color(0xFFCFCBFF) : _line)
+              .withValues(alpha: opacity),
+        ),
       );
       canvas.restore();
     }
@@ -457,5 +478,7 @@ class _MascotPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _MascotPainter oldDelegate) =>
-      oldDelegate.isDark != isDark || oldDelegate.animation != animation;
+      oldDelegate.isDark != isDark ||
+      oldDelegate.showBackdrop != showBackdrop ||
+      oldDelegate.animation != animation;
 }
