@@ -112,6 +112,18 @@ class S {
         'Remove the $quality result from $date? This cannot be undone.',
         'ลบผล "$quality" ของ$dateใช่ไหม? การลบนี้ไม่สามารถย้อนกลับได้',
       );
+  String get checkedInToday =>
+      _t("You've checked in today", 'วันนี้ประเมินแล้ว');
+  String get reassess => _t('Re-assess', 'ประเมินใหม่');
+  String get viewResult => _t('View result', 'ดูผล');
+  String get alreadyCheckedInTitle =>
+      _t('Already checked in today', 'วันนี้ประเมินแล้ว');
+  String alreadyCheckedInBody(String quality, int score) => _t(
+        "Today's result: $quality ($score/100). "
+            "Re-assessing replaces today's result.",
+        'ผลวันนี้: $quality ($score/100) '
+            'ถ้าประเมินใหม่ ผลเดิมของวันนี้จะถูกแทนที่',
+      );
   String get today => _t('Today', 'วันนี้');
   String get yesterday => _t('Yesterday', 'เมื่อวาน');
   String daysAgo(int n) => _t('$n days ago', '$n วันก่อน');

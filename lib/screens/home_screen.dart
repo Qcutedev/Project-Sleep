@@ -99,7 +99,49 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
 
   int get _trendWindow => _trendRange == '7d' ? 7 : 30;
 
+  /// ผลการประเมินของวันนี้ (ถ้ามี) ประวัติเรียงเก่าไปใหม่ จึงดูจากรายการท้ายสุด
+  SleepResult? get _todayResult {
+    if (_history.isEmpty) return null;
+    final last = _history.last;
+    return dateOnly(last.timestamp) == dateOnly(DateTime.now()) ? last : null;
+  }
+
   Future<void> _startAssessment() async {
+    final today = _todayResult;
+    if (today != null) {
+      final s = S.current;
+      // null = ยกเลิก, false = ดูผลเดิม, true = ประเมินใหม่
+      final reassess = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text(s.alreadyCheckedInTitle),
+          content: Text(
+            s.alreadyCheckedInBody(s.quality(today.quality), today.displayScore),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(s.cancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text(s.viewResult),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text(s.reassess),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || reassess == null) return;
+      if (!reassess) {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => ResultScreen(result: today)),
+        );
+        return;
+      }
+    }
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => const AssessmentScreen()),
     );
@@ -368,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               ),
               const SizedBox(height: 12),
               Text(
-                s.readyForCheck,
+                _todayResult != null ? s.checkedInToday : s.readyForCheck,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 20,
@@ -383,7 +425,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                   foregroundColor: AppTheme.primary,
                   padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
                 ),
-                child: Text(s.startAssessment),
+                child: Text(
+                  _todayResult != null ? s.reassess : s.startAssessment,
+                ),
               ),
             ],
           ),
