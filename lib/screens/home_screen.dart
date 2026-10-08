@@ -3,14 +3,17 @@ import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_result.dart';
 import '../services/history_service.dart';
+import '../services/profile_service.dart';
 import '../services/sleep_stats.dart';
 import '../widgets/sleep_trend_chart.dart';
 import '../widgets/home_pet.dart';
 import '../widgets/quality_badge.dart';
 import '../widgets/stat_chip.dart';
+import '../widgets/profile_avatar.dart';
 import '../services/route_observer.dart';
 import 'assessment_screen.dart';
 import 'about_screen.dart';
+import 'profile_screen.dart';
 import 'result_screen.dart';
 import 'settings_screen.dart';
 import 'stats_screen.dart';
@@ -92,26 +95,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     return total / recent.length;
   }
 
-  int get _streak {
-    if (_history.isEmpty) return 0;
-    final uniqueDays = _history
-        .map((r) =>
-            DateTime(r.timestamp.year, r.timestamp.month, r.timestamp.day))
-        .toSet()
-        .toList()
-      ..sort((a, b) => b.compareTo(a));
-
-    int streak = 1;
-    for (int i = 0; i < uniqueDays.length - 1; i++) {
-      final diff = uniqueDays[i].difference(uniqueDays[i + 1]).inDays;
-      if (diff == 1) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-    return streak;
-  }
+  int get _streak => checkInStreak(_history);
 
   int get _trendWindow => _trendRange == '7d' ? 7 : 30;
 
@@ -120,6 +104,12 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
       MaterialPageRoute(builder: (_) => const AssessmentScreen()),
     );
     _loadHistory();
+  }
+
+  void _openProfile() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+    );
   }
 
   void _openStats() {
@@ -164,29 +154,53 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: Row(
-                children: [
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.bedtime_rounded, color: Colors.white, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'SleepWise AI',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimaryColor(context),
-                    ),
-                  ),
-                ],
+            InkWell(
+              onTap: () {
+                Navigator.of(context).pop();
+                _openProfile();
+              },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: ValueListenableBuilder<UserProfile>(
+                  valueListenable: ProfileService.instance.profile,
+                  builder: (context, profile, _) {
+                    return Row(
+                      children: [
+                        ProfileAvatar(profile: profile, size: 44),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                profile.name.isEmpty
+                                    ? 'SleepWise AI'
+                                    : profile.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimaryColor(context),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                s.viewProfile,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppTheme.textSecondaryColor(context),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
             ),
             Divider(height: 1, color: AppTheme.borderColor(context)),
@@ -311,12 +325,43 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     size: 18,
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    _greeting,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                  Expanded(
+                    child: ValueListenableBuilder<UserProfile>(
+                      valueListenable: ProfileService.instance.profile,
+                      builder: (context, profile, _) {
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                profile.name.isEmpty
+                                    ? _greeting
+                                    : s.greetingWithName(
+                                        _greeting, profile.name),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Tooltip(
+                              message: s.profile,
+                              child: GestureDetector(
+                                onTap: _openProfile,
+                                child: ProfileAvatar(
+                                  profile: profile,
+                                  size: 40,
+                                  borderColor: Colors.white,
+                                  borderWidth: 2,
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ],

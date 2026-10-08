@@ -24,12 +24,13 @@ C:\Project SLEEP\            โฟลเดอร์ที่เปิดใน
 |---|---|
 | `splash_screen.dart` | อนิเมชันเปิดแอป ราว 5 วินาที แล้วสลับไป `MainShell` |
 | `main_shell.dart` | เปลือกหลัก มี bottom navigation 3 แท็บ (Home / Alarm / Sounds) เก็บ state ด้วย `IndexedStack` และถือ `SoundPlayerController` ตัวเดียวของทั้งแอป |
-| `home_screen.dart` | หัวทักทาย, การ์ดสถิติ, กราฟแนวโน้ม, รายการเช็กอินล่าสุด, เมนู drawer |
+| `home_screen.dart` | หัวทักทายพร้อมชื่อและรูปโปรไฟล์ (มุมขวาบน กดแล้วเปิดหน้าโปรไฟล์), การ์ดสถิติ, กราฟแนวโน้ม, รายการเช็กอินล่าสุด, เมนู drawer |
 | `assessment_screen.dart` | ฟอร์มกรอกข้อมูล 5 ค่า แล้วส่งต่อให้ `LoadingScreen` |
 | `loading_screen.dart` | เรียก backend, บันทึกผลลงประวัติ, แล้วสลับไป `ResultScreen` |
 | `result_screen.dart` | ผลการประเมิน 1 ครั้ง (ใช้ทั้งผลใหม่และผลย้อนหลัง) |
 | `stats_screen.dart` | สถิติการนอนแบบละเอียด เปิดจากกราฟหน้า Home หรือเมนู "ประวัติทั้งหมด" |
-| `settings_screen.dart` | โปรไฟล์, หน่วยเวลา, การแจ้งเตือน, ธีม, ภาษา, รีเซ็ตข้อมูล |
+| `profile_screen.dart` | รูปโปรไฟล์ (รูปจากเครื่องหรืออวตารสำเร็จรูป), ชื่อ อายุ เพศ, สรุปจำนวนเช็กอิน/วันต่อเนื่อง/คะแนนเฉลี่ย ใช้ widget `ProfileAvatar` ใน `widgets/profile_avatar.dart` |
+| `settings_screen.dart` | ทางเข้าหน้าโปรไฟล์, หน่วยเวลา, การแจ้งเตือน, ธีม, ภาษา, รีเซ็ตข้อมูล |
 | `about_screen.dart` | ข้อมูลแอปและ disclaimer |
 | `alarm_list_screen.dart` | รายการปลุก (แท็บ Alarm) |
 | `alarm_edit_screen.dart` | สร้าง/แก้ไขปลุก เลือกเวลาเข้านอนตามรอบการนอน |
@@ -50,6 +51,7 @@ C:\Project SLEEP\            โฟลเดอร์ที่เปิดใน
 | `alarm_scheduler_service.dart` | ตั้ง/ยกเลิกปลุกจริงผ่านแพ็กเกจ `alarm` |
 | `alarm_notification_service.dart` | แจ้งเตือนค้าง "ตั้งปลุกแล้ว" (notification id 900) |
 | `notification_service.dart` | เตือนเข้านอน (id 1, 22:00) และเตือนประจำวัน (id 2, 08:00) |
+| `profile_service.dart` | อ่าน/บันทึกโปรไฟล์ เลือกรูปด้วย `file_picker` แล้วคัดลอกเข้าโฟลเดอร์ `profile/` ของแอป แจ้งทุกหน้าผ่าน `ProfileService.instance.profile` (`ValueNotifier`) |
 | `sound_service.dart` | เสียงในแอป 4 เสียง, นำเข้าไฟล์เสียง, รายการโปรด |
 | `sound_player_controller.dart` | สถานะการเล่นเสียงกลาง (`ChangeNotifier`) ใช้ `just_audio` |
 | `device_service.dart` | เรียกโค้ด Android ผ่าน MethodChannel `sleepwise/device` (ถามยี่ห้อเครื่อง, เปิดหน้าสิทธิ์ของแอป) คู่กับ `MainActivity.kt` |
@@ -79,12 +81,13 @@ C:\Project SLEEP\            โฟลเดอร์ที่เปิดใน
 | `sleep_history_v1` | JSON รายการผลการประเมิน เรียงเก่าไปใหม่ |
 | `sleep_alarms_v1` | รายการปลุก |
 | `imported_sounds`, `favorite_sound_ids` | เสียงที่นำเข้าและรายการโปรด |
-| `settings_display_name`, `settings_age`, `settings_gender`, `settings_duration_unit` | โปรไฟล์และหน่วยเวลา |
+| `settings_display_name`, `settings_age`, `settings_gender`, `settings_duration_unit` | โปรไฟล์และหน่วยเวลา (สาม key แรกแก้ผ่าน `ProfileService` และ `assessment_screen.dart` อ่านไปเติมฟอร์ม) |
+| `profile_avatar_type`, `profile_avatar_value` | ชนิดรูปโปรไฟล์ (`none`/`preset`/`photo`) และ id ของอวตารหรือ path ของไฟล์รูป |
 | `settings_sleep_reminder`, `settings_daily_reminder` | สวิตช์การแจ้งเตือน |
 | `settings_appearance`, `settings_language` | ธีม (`light`/`dark`/`system`) และภาษา (`en`/`th`) |
 | `xiaomi_alarm_tip_shown` | เคยแสดงคำแนะนำสิทธิ์ของ Xiaomi แล้วหรือยัง |
 
-"รีเซ็ตข้อมูลทั้งหมด" ใน Settings เรียก `prefs.clear()` ซึ่งล้างทุก key ข้างบน
+"รีเซ็ตข้อมูลทั้งหมด" ใน Settings เรียก `prefs.clear()` ซึ่งล้างทุก key ข้างบน แล้วเรียก `ProfileService.clearAfterReset()` เพื่อลบไฟล์รูปโปรไฟล์
 
 ข้อมูลในประวัติเก็บค่าดิบภาษาอังกฤษจาก backend เสมอ (`quality` เป็น `Good`/`Fair`/`Poor`, ข้อความ factors และ recommendation เป็นอังกฤษ) แล้วแปลตอนแสดงผล ห้ามเก็บข้อความที่แปลแล้วลงประวัติ
 

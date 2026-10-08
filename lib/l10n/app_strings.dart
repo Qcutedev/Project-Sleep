@@ -279,6 +279,26 @@ class S {
         'This info is used to auto-fill your Sleep Assessment',
         'ข้อมูลนี้ใช้เติมในแบบประเมินการนอนให้อัตโนมัติ',
       );
+  String greetingWithName(String greeting, String name) =>
+      _t('$greeting, $name', '$greeting $name');
+  String get viewProfile => _t('View profile', 'ดูโปรไฟล์');
+  String get setUpProfile => _t('Set up your profile', 'ตั้งค่าโปรไฟล์');
+  String get profileSettingsSubtitle =>
+      _t('Name, picture, age, gender', 'ชื่อ รูป อายุ เพศ');
+  String get noNameYet => _t('No name yet', 'ยังไม่ได้ตั้งชื่อ');
+  String ageYears(int n) => _t('$n years old', 'อายุ $n ปี');
+  String get profileCheckIns => _t('Check-ins', 'เช็กอิน');
+  String get profilePicture => _t('Profile picture', 'รูปโปรไฟล์');
+  String get choosePhoto => _t('Choose from device', 'เลือกรูปจากเครื่อง');
+  String get removePhoto => _t('Remove', 'ลบรูป');
+  String get chooseAvatar => _t('Or pick an avatar', 'หรือเลือกอวตาร');
+  String get photoPickFailed =>
+      _t("Couldn't use that picture", 'ใช้รูปนี้ไม่ได้');
+  String get yourDetails => _t('Your details', 'ข้อมูลของคุณ');
+  String get profileStoredLocally => _t(
+        'Your profile stays on this device only.',
+        'โปรไฟล์เก็บไว้ในเครื่องนี้เท่านั้น',
+      );
   String get displayName => _t('Display name', 'ชื่อที่แสดง');
   String get displayNameHint => _t('e.g. Alex', 'เช่น อเล็กซ์');
   String get ageSettingsHint => _t(

@@ -6,6 +6,7 @@ import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/alarm_ringing_screen.dart';
 import 'services/route_observer.dart';
+import 'services/profile_service.dart';
 import 'services/notification_service.dart'; // 👈 เพิ่ม
 
 /// ใช้ navigate ไปหน้า Alarm Ringing ได้จากทุกที่ในแอป
@@ -33,6 +34,9 @@ void main() async {
 
   // โหลดภาษาที่บันทึกไว้ (จากหน้า Settings) ก่อนเปิดแอป เหตุผลเดียวกับธีม
   AppLanguage.notifier.value = prefs.getString(AppLanguage.prefsKey) ?? 'en';
+
+  // โหลดโปรไฟล์ไว้ก่อน หน้า Home จะได้แสดงรูปและชื่อทันทีโดยไม่กระพริบ
+  await ProfileService.instance.load();
 
   runApp(const SleepWiseApp());
 }
