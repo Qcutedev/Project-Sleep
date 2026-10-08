@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/sleep_result.dart';
+import 'sleep_stats.dart';
 
 /// เก็บผลการประเมินแต่ละครั้งไว้ในเครื่อง (local storage)
 /// ใช้ package shared_preferences ซึ่งเก็บเป็น key-value ง่ายๆ
@@ -10,10 +11,14 @@ import '../models/sleep_result.dart';
 class HistoryService {
   static const _storageKey = 'sleep_history_v1';
 
-  /// บันทึกผลลัพธ์ใหม่ 1 รายการ ต่อท้ายประวัติเดิม
-  Future<void> addResult(SleepResult result) async {
+  /// บันทึกผลลัพธ์ใหม่ โดยเก็บผลได้วันละ 1 รายการ
+  /// ถ้าวันเดียวกันมีผลอยู่แล้ว (รวมถึงข้อมูลเก่าที่มีหลายรายการต่อวัน)
+  /// จะถูกลบและแทนที่ด้วยผลใหม่
+  Future<void> saveDailyResult(SleepResult result) async {
     final prefs = await SharedPreferences.getInstance();
     final history = await getHistory();
+    final day = dateOnly(result.timestamp);
+    history.removeWhere((r) => dateOnly(r.timestamp) == day);
     history.add(result);
     final jsonList = history.map((r) => r.toStorageJson()).toList();
     await prefs.setString(_storageKey, jsonEncode(jsonList));

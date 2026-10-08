@@ -43,7 +43,7 @@ class _LoadingScreenState extends State<LoadingScreen> {
       final delayFuture = Future.delayed(const Duration(milliseconds: 600));
       final result = await resultFuture;
       await delayFuture;
-      await _historyService.addResult(result);
+      await _historyService.saveDailyResult(result);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => ResultScreen(result: result)),
