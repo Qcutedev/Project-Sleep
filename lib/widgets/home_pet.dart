@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import '../theme/app_theme.dart';
 
 /// สิ่งที่มาสคอตกำลังทำอยู่
 enum PetMode { walk, idle, sit, sleep, hop, happy }
@@ -25,7 +24,7 @@ class HomePet extends StatefulWidget {
 
 class _HomePetState extends State<HomePet> with SingleTickerProviderStateMixin {
   // ครึ่งความกว้างของตัว ใช้กันไม่ให้เดินเลยขอบแถบ
-  static const double _halfWidth = 30;
+  static const double _halfWidth = 38;
   static const double _walkSpeed = 24; // พิกเซลต่อวินาที
 
   final _pose = _PetPose();
@@ -211,7 +210,7 @@ class _HomePetState extends State<HomePet> with SingleTickerProviderStateMixin {
 /// ค่าท่าทางของมาสคอตในเฟรมปัจจุบัน painter วาดใหม่ทุกครั้งที่ [notify]
 class _PetPose extends ChangeNotifier {
   double x = 0;
-  double facing = 1; // 1 = หันขวา, -1 = หันซ้าย
+  double facing = 1; // ทิศที่กำลังเดินไป: 1 = ขวา, -1 = ซ้าย (ตัวหันหน้าตรงเสมอ)
   double walkPhase = 0;
   double walking = 0; // 0..1
   double sit = 0; // 0..1
@@ -228,11 +227,10 @@ class _PetPose extends ChangeNotifier {
 
 class _PetPainter extends CustomPainter {
   static const double _scale = 1.12;
-  static const Color _outline = AppTheme.primaryDark;
-  static const Color _face = Color(0xFF2B2670);
-  static const Color _blush = Color(0xFFFFB3C7);
-  static const Color _gold = Color(0xFFF5C454);
-  static const Color _farLeg = Color(0xFFE6E3FB);
+  static const Color _outline = Color(0xFFB98A5E);
+  static const Color _eye = Color(0xFF45B5F0);
+  static const Color _blush = Color(0xFFFBC4D8);
+  static const Color _tongue = Color(0xFFFF9DB8);
 
   final _PetPose pose;
 
@@ -255,18 +253,19 @@ class _PetPainter extends CustomPainter {
     final lie = Curves.easeInOut.transform(p.lie.clamp(0.0, 1.0));
     final sit = Curves.easeInOut.transform(p.sit.clamp(0.0, 1.0));
     final step = math.sin(p.walkPhase) * p.walking;
-    final bounce = math.sin(p.walkPhase * 2).abs() * 1.4 * p.walking;
+    final bounce = math.sin(p.walkPhase).abs() * 1.3 * p.walking;
     final breath = math.sin(p.clock * 2.2);
     final hopY = -15 * p.hop;
+    final upright = 1 - lie;
 
     canvas.save();
     canvas.translate(p.x, size.height);
 
-    // เงาเล็กลงตอนกระโดด
+    // เงาเล็กลงตอนกระโดด และกว้างขึ้นตอนนอนแผ่
     canvas.drawOval(
       Rect.fromCenter(
         center: const Offset(0, -0.5),
-        width: (40 + 8 * lie) * (1 - 0.35 * p.hop),
+        width: _lerp(26, 52, lie) * (1 - 0.35 * p.hop),
         height: 5,
       ),
       Paint()..color = Colors.black.withValues(alpha: 0.16),
@@ -274,189 +273,197 @@ class _PetPainter extends CustomPainter {
 
     canvas.save();
     canvas.translate(0, hopY);
-    canvas.scale(_scale * p.facing, _scale);
+    canvas.scale(_scale);
+    // เดินสองขาแบบโยกตัวซ้ายขวา
+    canvas.rotate(0.07 * step);
 
-    final legScale = 1 - lie;
+    // ตอนนอน ตัวโผล่ออกมาด้านหลังหัวทางฝั่งตรงข้ามกับที่หันไป
+    final side = -p.facing;
+    final bodyCenter = Offset(
+      side * 11 * lie,
+      _lerp(-10, -6.5, lie) + 1.5 * sit - bounce * 0.6,
+    );
+    final bodyHeight = _lerp(15, 12, lie) * (1 + (p.asleep ? 0.05 * breath : 0));
+
+    _paintTail(canvas, bodyCenter + Offset(side * _lerp(8.5, 9, lie), 3), side);
+
+    final body = RRect.fromRectAndRadius(
+      Rect.fromCenter(center: bodyCenter, width: 18, height: bodyHeight),
+      const Radius.circular(7.5),
+    );
+    canvas.drawRRect(body, _fur);
+    canvas.drawRRect(body, _stroke(1.8));
+
+    // เท้าสองข้าง ยกสลับกันตอนเดิน ยื่นมาข้างหน้าตอนนั่ง
+    if (upright > 0.05) {
+      for (final s in const [-1.0, 1.0]) {
+        final lift = math.max(0.0, s * step) * 3.2;
+        final foot = Rect.fromCenter(
+          center: Offset(
+            s * _lerp(4.6, 6.5, sit),
+            -2.4 - lift * upright - 0.9 * sit,
+          ),
+          width: _lerp(7.5, 8.5, sit) * upright,
+          height: _lerp(5, 6.5, sit) * upright,
+        );
+        canvas.drawOval(foot, _fur);
+        canvas.drawOval(foot, _stroke(1.8));
+      }
+    }
+
+    // แขนสั้นๆ แกว่งตอนเดิน ชูขึ้นตอนดีใจ
+    if (upright > 0.05) {
+      for (final s in const [-1.0, 1.0]) {
+        final raise = p.happy * 6 + p.hop * 2;
+        final arm = Rect.fromCenter(
+          center: bodyCenter + Offset(s * 9.2, -1.5 - raise + s * step * 1.6),
+          width: 6.2 * upright,
+          height: 4.6 * upright,
+        );
+        canvas.drawOval(arm, _fur);
+        canvas.drawOval(arm, _stroke(1.8));
+      }
+    }
+
     final headCenter = Offset(
-      _lerp(9, 12, lie),
-      _lerp(-25, -11.5, lie) - bounce + 1.5 * sit + (p.asleep ? breath * 0.5 : 0),
+      p.facing * 0.8 * p.walking,
+      _lerp(-25, -11, lie) + 2.2 * sit - bounce + (p.asleep ? breath * 0.4 : 0),
     );
-
-    // ขาฝั่งไกลอยู่หลังตัว สีเข้มกว่านิดหนึ่งให้ดูมีมิติ
-    // ตอนนั่ง ขาหลังพับเก็บใต้ตัวจึงไม่วาด
-    _leg(canvas, -8, -step, legScale * (1 - sit), _farLeg);
-    _leg(canvas, 7, step, legScale, _farLeg);
-
-    // ลำตัวและหาง เอนลงด้านหลังตอนนั่ง
-    canvas.save();
-    canvas.translate(4, -9);
-    canvas.rotate(-0.32 * sit);
-    canvas.translate(-4, 9);
-    final bodyCenter = Offset(-3, _lerp(-14, -8.5, lie) - bounce * 0.6 + 2 * sit);
-    final wagSpeed = p.happy > 0 ? 22.0 : (p.walking > 0.5 ? 9.0 : 4.0);
-    final wag = math.sin(p.clock * wagSpeed) * (p.asleep ? 0.05 : 0.35);
-    final tailBase = bodyCenter + Offset(-13 - 2 * lie, -3 + 2 * lie);
-    final tail = tailBase + Offset(-1.5 * math.cos(wag), -2 - 3.5 * math.sin(wag + 0.6));
-    canvas.drawCircle(tail, 5, _fur);
-    canvas.drawCircle(tail, 5, _stroke(2));
-    final body = Rect.fromCenter(
-      center: bodyCenter,
-      width: _lerp(30, 35, lie),
-      height: _lerp(19, 15, lie) * (1 + (p.asleep ? 0.05 * breath : 0)),
-    );
-    canvas.drawOval(body, _fur);
-    canvas.drawOval(body, _stroke(2));
-    canvas.restore();
-
-    _leg(canvas, -12, step, legScale * (1 - sit), Colors.white);
-    _leg(canvas, 3, -step, legScale, Colors.white);
-
-    // หูปลิวขึ้นตอนกระโดด และแผ่ราบตอนนอน
-    final flop = math.sin(p.walkPhase * 2 - 0.8) * 0.16 * p.walking;
-    final lift = p.hop * 0.9;
-    _ear(
-      canvas,
-      headCenter + const Offset(-8, -5),
-      _lerp(2.15, 2.95, lie) + flop + lift,
-      20,
-    );
-    _ear(
-      canvas,
-      headCenter + const Offset(9, -6),
-      _lerp(0.95, 0.3, lie) - flop - lift,
-      16,
-    );
-
-    canvas.drawCircle(headCenter, 13, _fur);
-    canvas.drawCircle(headCenter, 13, _stroke(2));
-
-    if (lie > 0.5) _cap(canvas, headCenter, (lie - 0.5) * 2);
-    _paintFace(canvas, headCenter, lie);
+    _paintHead(canvas, headCenter, lie);
+    _paintFace(canvas, headCenter + Offset(p.facing * 1.3 * p.walking, 0), lie);
 
     canvas.restore();
 
-    // ตัว Z และหัวใจวาดนอกการกลับด้าน ไม่อย่างนั้นตอนหันซ้ายตัว Z จะกลับหัวกลับหาง
-    final top = Offset(p.facing * 14 * _scale, hopY - 34 * _scale);
+    final top = Offset(0, hopY - 40 * _scale);
     if (p.asleep && lie > 0.8) {
-      _paintZs(canvas, Offset(p.facing * 20 * _scale, -26 * _scale));
+      _paintZs(canvas, Offset(p.facing * 12 * _scale, -26 * _scale));
     }
     if (p.heart >= 0) _paintHeart(canvas, top, p.heart);
 
     canvas.restore();
   }
 
-  void _leg(Canvas canvas, double x, double swing, double length, Color color) {
-    if (length <= 0.05) return;
-    canvas.save();
-    canvas.translate(x, -8.5);
-    canvas.rotate(swing * 0.5);
-    final leg = RRect.fromLTRBR(-3.2, 0, 3.2, 8.5 * length, const Radius.circular(3.2));
-    canvas.drawRRect(leg, Paint()..color = color);
-    canvas.drawRRect(leg, _stroke(2));
-    canvas.restore();
+  /// หัวกับหูสองข้างรวมเป็นรูปทรงเดียว เส้นขอบจึงต่อเนื่องกันเหมือนในภาพต้นแบบ
+  void _paintHead(Canvas canvas, Offset head, double lie) {
+    final p = pose;
+    // หูกางออกข้างและกระพือเบาๆ ชูขึ้นเหมือนปีกตอนกระโดด แผ่ลงพื้นตอนนอน
+    final wave = math.sin(p.clock * 2.6) * 0.07 * (1 - lie);
+    final flap = math.sin(p.walkPhase * 2 - 0.8) * 0.13 * p.walking;
+    final lift = p.hop * 0.75 + p.happy * 0.25;
+    final droop = _lerp(0.16, 0.34, lie) + wave + flap - lift;
+
+    var shape = Path()
+      ..addOval(Rect.fromCenter(center: head, width: 31, height: 23));
+    for (final s in const [-1.0, 1.0]) {
+      shape = Path.combine(
+        PathOperation.union,
+        shape,
+        _earPath(head + Offset(s * 10.5, -5.5), s, droop),
+      );
+    }
+    canvas.drawPath(shape, _fur);
+    canvas.drawPath(shape, _stroke(1.8));
+
+    // รอยพับที่โคนหู
+    for (final s in const [-1.0, 1.0]) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(head.dx + s * 12.2, head.dy - 3.5)
+          ..quadraticBezierTo(
+            head.dx + s * 13.6,
+            head.dy - 0.5,
+            head.dx + s * 13,
+            head.dy + 2.5,
+          ),
+        _stroke(1.4),
+      );
+    }
   }
 
-  void _ear(Canvas canvas, Offset pivot, double angle, double length) {
-    canvas.save();
-    canvas.translate(pivot.dx, pivot.dy);
-    canvas.rotate(angle);
+  Path _earPath(Offset root, double side, double droop) {
+    const length = 21.0;
     final ear = Path()
-      ..moveTo(-2, -3.5)
-      ..cubicTo(length * 0.4, -7.5, length * 0.98, -7.5, length, -0.5)
-      ..cubicTo(length * 1.02, 6.5, length * 0.4, 6, -2, 4)
+      ..moveTo(-3, -4.5)
+      ..cubicTo(length * 0.35, -7.5, length * 0.95, -8.5, length, -1)
+      ..cubicTo(length * 1.04, 7, length * 0.45, 6.5, -3, 4.5)
       ..close();
-    canvas.drawPath(ear, _fur);
-    canvas.drawPath(ear, _stroke(2));
-    canvas.restore();
+    final matrix = Matrix4.identity()
+      ..translateByDouble(root.dx, root.dy, 0, 1)
+      ..scaleByDouble(side, 1, 1, 1)
+      ..rotateZ(droop);
+    return ear.transform(matrix.storage);
   }
 
-  /// หมวกนอน โผล่มาเฉพาะตอนหลับ
-  void _cap(Canvas canvas, Offset head, double opacity) {
-    final alpha = opacity.clamp(0.0, 1.0);
-    final cap = Path()
-      ..moveTo(head.dx - 9, head.dy - 9.5)
-      ..quadraticBezierTo(head.dx - 9, head.dy - 17, head.dx - 12, head.dy - 22)
-      ..cubicTo(head.dx - 2, head.dy - 24, head.dx + 7, head.dy - 19,
-          head.dx + 8, head.dy - 10.5)
-      ..quadraticBezierTo(head.dx, head.dy - 15, head.dx - 9, head.dy - 9.5)
-      ..close();
-    canvas.drawPath(
-      cap,
-      Paint()..color = const Color(0xFFB9B3FF).withValues(alpha: alpha),
+  /// หางม้วนเป็นวงเหมือนซินนามอนโรล
+  void _paintTail(Canvas canvas, Offset center, double side) {
+    final wagSpeed = pose.happy > 0 ? 20.0 : 5.0;
+    final wag = math.sin(pose.clock * wagSpeed) * (pose.asleep ? 0.03 : 0.22);
+    canvas.save();
+    canvas.translate(center.dx, center.dy);
+    canvas.scale(side, 1);
+    canvas.rotate(wag);
+    canvas.drawCircle(const Offset(3.5, -1), 4.6, _fur);
+    canvas.drawCircle(const Offset(3.5, -1), 4.6, _stroke(1.8));
+    canvas.drawArc(
+      Rect.fromCircle(center: const Offset(3.8, -0.8), radius: 2.1),
+      0.6,
+      4.3,
+      false,
+      _stroke(1.4),
     );
-    canvas.drawPath(cap, _stroke(2, _outline.withValues(alpha: alpha)));
-    final pom = Offset(head.dx - 13, head.dy - 22);
-    canvas.drawCircle(pom, 3, Paint()..color = _gold.withValues(alpha: alpha));
-    canvas.drawCircle(pom, 3, _stroke(1.6, _outline.withValues(alpha: alpha)));
+    canvas.restore();
   }
 
   void _paintFace(Canvas canvas, Offset head, double lie) {
     final p = pose;
-    final blush = Paint()..color = _blush.withValues(alpha: 0.9);
-    canvas.drawOval(
-      Rect.fromCenter(center: head + const Offset(-6.5, 5.5), width: 6, height: 3.6),
-      blush,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(center: head + const Offset(10, 5.5), width: 5, height: 3.6),
-      blush,
-    );
+    final blush = Paint()..color = _blush;
+    for (final s in const [-1.0, 1.0]) {
+      canvas.drawOval(
+        Rect.fromCenter(
+          center: head + Offset(s * 10.3, 4.6),
+          width: 6.4,
+          height: 3.8,
+        ),
+        blush,
+      );
+    }
 
     final closed = math.max(p.blink, lie);
-    for (final dx in const [-2.5, 7.5]) {
-      final eye = head + Offset(dx, 1);
-      if (p.happy > 0.15) {
-        // ตายิ้มตอนดีใจ
-        canvas.drawPath(
-          Path()
-            ..moveTo(eye.dx - 2.4, eye.dy + 1)
-            ..quadraticBezierTo(eye.dx, eye.dy - 2.4, eye.dx + 2.4, eye.dy + 1),
-          _stroke(1.8, _face),
-        );
-      } else if (closed > 0.6) {
-        canvas.drawPath(
-          Path()
-            ..moveTo(eye.dx - 2.4, eye.dy)
-            ..quadraticBezierTo(eye.dx, eye.dy + 2.2, eye.dx + 2.4, eye.dy),
-          _stroke(1.8, _face),
+    for (final s in const [-1.0, 1.0]) {
+      final eye = head + Offset(s * 7.4, 0.6);
+      if (closed > 0.6) {
+        // ตาหลับเป็นเส้นสีฟ้าเฉียงลงด้านนอก
+        canvas.drawLine(
+          eye + Offset(-s * 2.4, -0.4),
+          eye + Offset(s * 2.4, 0.9),
+          _stroke(1.9, _eye),
         );
       } else {
         canvas.drawOval(
-          Rect.fromCenter(center: eye, width: 3, height: 4.2 * (1 - closed)),
-          Paint()..color = _face,
-        );
-        canvas.drawCircle(
-          eye + const Offset(0.6, -0.9),
-          0.7,
-          Paint()..color = Colors.white,
+          Rect.fromCenter(center: eye, width: 3.3, height: 4.6 * (1 - closed)),
+          Paint()..color = _eye,
         );
       }
     }
 
-    final mouth = head + const Offset(2.5, 5.2);
+    final mouth = head + const Offset(0, 4.4);
     if (p.happy > 0.15) {
-      // อ้าปากยิ้ม
-      canvas.drawArc(
-        Rect.fromCenter(center: mouth, width: 5, height: 5),
-        0,
-        math.pi,
-        true,
-        Paint()..color = const Color(0xFFFF8FAB),
-      );
-      canvas.drawArc(
-        Rect.fromCenter(center: mouth, width: 5, height: 5),
-        0,
-        math.pi,
-        true,
-        _stroke(1.4, _face),
-      );
+      // อ้าปากยิ้มเห็นลิ้น
+      final open = Path()
+        ..moveTo(mouth.dx - 2.6, mouth.dy - 0.6)
+        ..lineTo(mouth.dx + 2.6, mouth.dy - 0.6)
+        ..quadraticBezierTo(mouth.dx + 1.6, mouth.dy + 4.6, mouth.dx, mouth.dy + 4.6)
+        ..quadraticBezierTo(mouth.dx - 1.6, mouth.dy + 4.6, mouth.dx - 2.6, mouth.dy - 0.6)
+        ..close();
+      canvas.drawPath(open, Paint()..color = _tongue);
+      canvas.drawPath(open, _stroke(1.3));
     } else {
       canvas.drawPath(
         Path()
-          ..moveTo(mouth.dx - 2.6, mouth.dy)
-          ..quadraticBezierTo(mouth.dx - 1.3, mouth.dy + 2, mouth.dx, mouth.dy)
-          ..quadraticBezierTo(mouth.dx + 1.3, mouth.dy + 2, mouth.dx + 2.6, mouth.dy),
-        _stroke(1.5, _face),
+          ..moveTo(mouth.dx - 2.9, mouth.dy - 0.3)
+          ..quadraticBezierTo(mouth.dx - 1.5, mouth.dy + 2.3, mouth.dx, mouth.dy)
+          ..quadraticBezierTo(mouth.dx + 1.5, mouth.dy + 2.3, mouth.dx + 2.9, mouth.dy - 0.3),
+        _stroke(1.4),
       );
     }
   }
