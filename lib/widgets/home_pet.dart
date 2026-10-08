@@ -227,7 +227,7 @@ class _PetPose extends ChangeNotifier {
 
 class _PetPainter extends CustomPainter {
   static const double _scale = 1.12;
-  static const Color _outline = Color(0xFFB98A5E);
+  static const Color _outline = Color(0xFF1A1A1A);
   static const Color _eye = Color(0xFF45B5F0);
   static const Color _blush = Color(0xFFFBC4D8);
   static const Color _tongue = Color(0xFFFF9DB8);
