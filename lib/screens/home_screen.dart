@@ -5,6 +5,7 @@ import '../models/sleep_result.dart';
 import '../services/history_service.dart';
 import '../services/sleep_stats.dart';
 import '../widgets/sleep_trend_chart.dart';
+import '../widgets/home_pet.dart';
 import '../widgets/quality_badge.dart';
 import '../widgets/stat_chip.dart';
 import '../services/route_observer.dart';
@@ -263,7 +264,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         top: MediaQuery.of(context).padding.top + 16,
         left: 20,
         right: 20,
-        bottom: 40,
+        // การ์ดสถิติทับขึ้นมา 24 พอดีกับค่านี้ เท้าของมาสคอตจึงอยู่บนขอบบนของการ์ด
+        bottom: 24,
       ),
       decoration: const BoxDecoration(
         color: AppTheme.primary,
@@ -287,7 +289,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
               ),
             ),
           ),
-          Column(
+          Padding(
+            // เว้นที่ด้านล่างให้มาสคอตเดิน
+            padding: const EdgeInsets.only(bottom: HomePet.laneHeight),
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -336,6 +341,14 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                 child: Text(s.startAssessment),
               ),
             ],
+          ),
+          ),
+          const Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: HomePet.laneHeight,
+            child: HomePet(),
           ),
         ],
       ),
