@@ -350,7 +350,7 @@ class _PetPainter extends CustomPainter {
     final wave = math.sin(p.clock * 2.6) * 0.07 * (1 - lie);
     final flap = math.sin(p.walkPhase * 2 - 0.8) * 0.13 * p.walking;
     final lift = p.hop * 0.75 + p.happy * 0.25;
-    final droop = _lerp(0.16, 0.34, lie) + wave + flap - lift;
+    final droop = _lerp(0.34, 0.42, lie) + wave + flap - lift;
 
     var shape = Path()
       ..addOval(Rect.fromCenter(center: head, width: 31, height: 23));
