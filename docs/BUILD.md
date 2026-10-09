@@ -49,6 +49,8 @@ cp build/app/outputs/flutter-apk/app-release.apk "$USERPROFILE/OneDrive/Desktop/
 
 คำเตือนเรื่อง Kotlin Gradle Plugin ของแพ็กเกจ `alarm` ตอน build เป็นเรื่องปกติ ไม่ต้องแก้
 
+**ทรัพยากร Android ที่เรียกด้วยชื่อจาก Dart** (เช่น ไอคอน notification `@drawable/...`) ต้องเพิ่มชื่อไว้ใน `android/app/src/main/res/raw/keep.xml` การ build แบบ release ตัดทรัพยากรที่ไม่มีโค้ด Android อ้างถึงทิ้ง แล้ว notification จะไม่ขึ้นโดยไม่มีข้อความผิดพลาด (เคยเกิดกับ notification "ตั้งปลุกแล้ว") ตรวจได้ด้วย `aapt2 dump resources <apk>` แล้วหาชื่อทรัพยากรนั้น
+
 ## ตรวจงาน
 
 ### สิ่งที่ตรวจได้

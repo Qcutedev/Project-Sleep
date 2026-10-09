@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ไอคอนของ notification ถูกเรียกด้วยชื่อจากฝั่ง Dart เท่านั้น
+     ถ้าไม่ระบุไว้ตรงนี้ การ build แบบ release จะมองว่าไม่มีใครใช้แล้วตัดทิ้ง
+     ทำให้ notification "ตั้งปลุกแล้ว" ไม่ขึ้น -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_stat_notification" />
