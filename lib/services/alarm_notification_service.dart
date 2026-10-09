@@ -66,24 +66,42 @@ class AlarmNotificationService {
         ? s.nextAlarmAtWithCount(timeStr, enabled.length)
         : s.nextAlarmAt(timeStr);
 
-    const androidDetails = AndroidNotificationDetails(
-      'alarm_set_channel',
-      'Alarm Set',
-      channelDescription: 'Notifies you that a wake-up alarm has been set',
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true,
-      autoCancel: false,
-      icon: '@drawable/ic_stat_notification',
-    );
-    const iosDetails = DarwinNotificationDetails(presentSound: false);
+    await _show(title: s.alarmSetNotifTitle, body: body);
+  }
 
-    await _plugin.show(
-      id: _setNotificationId,
-      title: s.alarmSetNotifTitle,
-      body: body,
-      notificationDetails: const NotificationDetails(android: androidDetails, iOS: iosDetails),
-    );
+  /// ไอคอนนี้ต้องถูกระบุไว้ใน android/app/src/main/res/raw/keep.xml ด้วย
+  /// ไม่อย่างนั้นการ build แบบ release จะตัดไฟล์ทิ้ง
+  static const String _icon = '@drawable/ic_stat_notification';
+
+  static AndroidNotificationDetails _androidDetails({String? icon}) =>
+      AndroidNotificationDetails(
+        'alarm_set_channel',
+        'Alarm Set',
+        channelDescription: 'Notifies you that a wake-up alarm has been set',
+        importance: Importance.low,
+        priority: Priority.low,
+        ongoing: true,
+        autoCancel: false,
+        icon: icon,
+      );
+
+  Future<void> _show({required String title, required String body}) async {
+    const iosDetails = DarwinNotificationDetails(presentSound: false);
+    Future<void> show(String? icon) => _plugin.show(
+          id: _setNotificationId,
+          title: title,
+          body: body,
+          notificationDetails: NotificationDetails(
+            android: _androidDetails(icon: icon),
+            iOS: iosDetails,
+          ),
+        );
+    try {
+      await show(_icon);
+    } catch (_) {
+      // ถ้าไอคอนเฉพาะใช้ไม่ได้ ให้ใช้ไอคอนแอปแทน ดีกว่าไม่มี notification เลย
+      await show(null);
+    }
   }
 
   /// แสดง notification ชั่วคราวหลังกด snooze
@@ -94,23 +112,9 @@ class AlarmNotificationService {
     final timeStr =
         '${wakeDateTime.hour.toString().padLeft(2, '0')}:${wakeDateTime.minute.toString().padLeft(2, '0')}';
 
-    const androidDetails = AndroidNotificationDetails(
-      'alarm_set_channel',
-      'Alarm Set',
-      channelDescription: 'Notifies you that a wake-up alarm has been set',
-      importance: Importance.low,
-      priority: Priority.low,
-      ongoing: true,
-      autoCancel: false,
-      icon: '@drawable/ic_stat_notification',
-    );
-    const iosDetails = DarwinNotificationDetails(presentSound: false);
-
-    await _plugin.show(
-      id: _setNotificationId,
+    await _show(
       title: S.current.alarmSetNotifTitle,
       body: S.current.snoozedUntil(timeStr),
-      notificationDetails: const NotificationDetails(android: androidDetails, iOS: iosDetails),
     );
   }
 
