@@ -51,6 +51,8 @@ class SleepResult {
         'physical_activity': input.physicalActivity,
         'age': input.age,
         'gender': input.gender,
+        if (input.bedtime != null) 'bedtime': input.bedtime,
+        if (input.wakeTime != null) 'wake_time': input.wakeTime,
       };
 
   factory SleepResult.fromStorageJson(Map<String, dynamic> json) {
@@ -69,6 +71,8 @@ class SleepResult {
         physicalActivity: json['physical_activity'] as int,
         age: json['age'] as int,
         gender: json['gender'] as String,
+        bedtime: json['bedtime'] as String?,
+        wakeTime: json['wake_time'] as String?,
       ),
     );
   }

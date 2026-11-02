@@ -186,9 +186,17 @@ class S {
   // ---------- Assessment ----------
   String get assessmentTitle => _t('Sleep assessment', 'ประเมินการนอน');
   String get sleepDuration => _t('Sleep duration', 'ระยะเวลาการนอน');
-  String get sleepDurationHint => _t(
-        'How many hours did you sleep last night?',
-        'เมื่อคืนคุณนอนกี่ชั่วโมง?',
+  String get sleepTimesHint => _t(
+        'When did you sleep and wake up?',
+        'เมื่อคืนนอนและตื่นกี่โมง?',
+      );
+  String get bedtime => _t('Bedtime', 'เข้านอน');
+  String get wakeTime => _t('Wake time', 'ตื่นนอน');
+  String get hourLabel => _t('Hour', 'ชั่วโมง');
+  String get minuteLabel => _t('Minute', 'นาที');
+  String sleepCappedNote(int hours) => _t(
+        'Counted as $hours hrs, the most this assessment accepts.',
+        'นับเป็น $hours ชม. ซึ่งเป็นค่าสูงสุดของแบบประเมินนี้',
       );
   String hoursValue(String h) => _t('$h hrs', '$h ชม.');
   String get stressLevel => _t('Stress level', 'ระดับความเครียด');
@@ -484,6 +492,19 @@ class S {
       _t('Check-ins in this period', 'การเช็กอินในช่วงนี้');
   String get noDataInRange =>
       _t('No check-ins in this period', 'ไม่มีการเช็กอินในช่วงนี้');
+
+  // ---------- ความสม่ำเสมอของเวลาเข้านอน (หน้า Stats) ----------
+  String get bedtimeConsistencyTitle =>
+      _t('Bedtime consistency', 'ความสม่ำเสมอของเวลาเข้านอน');
+  String get averageBedtime => _t('Average bedtime', 'เข้านอนเฉลี่ย');
+  String get bedtimeSpread => _t('Usual variation', 'คลาดเคลื่อนราว');
+  String bedtimeSpreadValue(int minutes) => _t('±$minutes min', '±$minutes นาที');
+  String bedtimeNights(int nights) =>
+      _t('From $nights nights', 'จากข้อมูล $nights คืน');
+  String get bedtimeNote => _t(
+        'From your own entries. A steadier bedtime is general sleep advice, not a medical finding.',
+        'คำนวณจากข้อมูลที่คุณกรอก การเข้านอนให้สม่ำเสมอเป็นคำแนะนำทั่วไป ไม่ใช่ผลทางการแพทย์',
+      );
 
   // ---------- About ----------
   String get aboutTitle => _t('About SleepWise AI', 'เกี่ยวกับ SleepWise AI');
