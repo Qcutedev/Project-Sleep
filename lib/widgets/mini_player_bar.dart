@@ -64,7 +64,11 @@ class MiniPlayerBar extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    controller.isPlaying ? s.playingLooping : s.paused,
+                    !controller.isPlaying
+                        ? s.paused
+                        : controller.repeatOne
+                            ? s.playingLooping
+                            : s.playingNow,
                     style: TextStyle(fontSize: 11, color: Colors.white.withValues(alpha: 0.75)),
                   ),
                 ],
