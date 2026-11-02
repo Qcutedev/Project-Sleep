@@ -1,7 +1,11 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
+import '../services/history_export.dart';
+import '../services/history_service.dart';
 import '../services/notification_service.dart';
 import '../services/alarm_notification_service.dart';
 import '../services/alarm_storage_service.dart';
@@ -93,6 +97,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (_dailyReminder) await _scheduleDailyReminder();
     final alarms = await AlarmStorageService.instance.loadAlarms();
     await AlarmNotificationService.instance.syncWithAlarms(alarms);
+  }
+
+  /// ให้ผู้ใช้เลือกที่บันทึกเอง ไม่ต้องขอสิทธิ์เข้าถึงไฟล์ของเครื่อง
+  Future<void> _exportHistory() async {
+    final s = S.current;
+    final messenger = ScaffoldMessenger.of(context);
+    final history = await HistoryService().getHistory();
+    if (history.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(s.exportEmpty)));
+      return;
+    }
+    try {
+      final saved = await FilePicker.saveFile(
+        fileName: historyFileName(DateTime.now()),
+        bytes: Uint8List.fromList(csvBytes(historyToCsv(history))),
+        mimeType: 'text/csv',
+        dialogTitle: s.exportHistory,
+      );
+      if (saved != null) {
+        messenger.showSnackBar(SnackBar(content: Text(s.exportDone)));
+      }
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(s.exportFailed)));
+    }
   }
 
   Future<void> _confirmResetAllData() async {
@@ -414,6 +442,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+
+          _sectionTitle(context, s.yourData),
+          _card(
+            context,
+            child: ListTile(
+              leading: Icon(Icons.file_download_outlined, color: textSecondary),
+              title: Text(
+                s.exportHistory,
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textPrimary),
+              ),
+              subtitle: Text(
+                s.exportHistorySubtitle,
+                style: TextStyle(fontSize: 11, color: textMuted),
+              ),
+              trailing: Icon(Icons.chevron_right_rounded, color: textMuted),
+              onTap: _exportHistory,
             ),
           ),
 
