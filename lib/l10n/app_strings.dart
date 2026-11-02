@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../services/sleep_advice.dart';
 
 /// ภาษาปัจจุบันของแอป ('en' | 'th') — ค่าเดียวกับที่หน้า Settings บันทึกไว้
 /// เปลี่ยนค่าที่นี่แล้วทุกหน้าที่เรียก `S.of(context)` จะ rebuild เป็นภาษาใหม่ทันที
@@ -189,6 +190,152 @@ class S {
         'ผลนี้เป็นการทำนายของโมเดลจากต้นแบบเพื่อการศึกษา ไม่ใช่การวินิจฉัยทางการแพทย์',
       );
   String get backToHome => _t('Back to home', 'กลับหน้าหลัก');
+
+  // ---------- คำแนะนำตามคะแนน (หน้า Result) ----------
+  String get adviceTitle => _t('Tips for your score', 'คำแนะนำตามคะแนนของคุณ');
+
+  String scoreBandTitle(ScoreBand band) {
+    switch (band) {
+      case ScoreBand.high:
+        return _t('Great routine', 'กิจวัตรดีมาก');
+      case ScoreBand.mid:
+        return _t('Room to improve', 'ยังพัฒนาได้อีก');
+      case ScoreBand.low:
+        return _t('Worth improving', 'ควรปรับปรุง');
+      case ScoreBand.veryLow:
+        return _t('Low score', 'คะแนนค่อนข้างต่ำ');
+    }
+  }
+
+  String scoreBandText(ScoreBand band) {
+    switch (band) {
+      case ScoreBand.high:
+        return _t(
+          'Your inputs look steady. Keep the same sleep and wake times, even on days off.',
+          'ข้อมูลของคุณดี ลองคงเวลานอนและเวลาตื่นให้เท่าเดิม แม้ในวันหยุด',
+        );
+      case ScoreBand.mid:
+        return _t(
+          'Small, steady changes help most. Pick one tip below and try it for a week.',
+          'ปรับทีละนิดอย่างสม่ำเสมอจะได้ผลที่สุด เลือกหนึ่งข้อด้านล่างแล้วลองสักสัปดาห์',
+        );
+      case ScoreBand.low:
+        return _t(
+          'A few habits are associated with this score. Start with the first tip below and give it a week.',
+          'มีหลายนิสัยที่สัมพันธ์กับคะแนนนี้ เริ่มจากข้อแรกด้านล่างแล้วลองสักสัปดาห์',
+        );
+      case ScoreBand.veryLow:
+        return _t(
+          'Change one habit at a time. If poor sleep lasts for weeks and worries you, consider talking to a health professional.',
+          'ปรับทีละอย่าง ถ้านอนไม่ดีต่อเนื่องหลายสัปดาห์และกังวล ควรปรึกษาผู้เชี่ยวชาญด้านสุขภาพ',
+        );
+    }
+  }
+
+  String adviceText(AdviceTip tip) {
+    switch (tip.kind) {
+      case AdviceKind.durationShort:
+        return _t(
+          'Aim for ${tip.low}–${tip.high} hrs for your age. Try going to bed 15 minutes earlier each night until you get there.',
+          'ตั้งเป้านอน ${tip.low}–${tip.high} ชม. ตามวัย ลองเข้านอนเร็วขึ้นคืนละ 15 นาทีจนถึงเป้า',
+        );
+      case AdviceKind.durationLong:
+        return _t(
+          'This is longer than the usual ${tip.low}–${tip.high} hrs for your age. A fixed wake-up time helps keep your rhythm steady.',
+          'นานกว่าช่วงทั่วไป ${tip.low}–${tip.high} ชม. ตามวัย การตื่นเวลาเดิมทุกวันช่วยให้จังหวะการนอนคงที่',
+        );
+      case AdviceKind.stressHigh:
+        return _t(
+          'Stress is high. Try slow breathing, or write down tomorrow\'s tasks before bed.',
+          'ความเครียดสูง ลองหายใจช้าๆ หรือจดงานของพรุ่งนี้ไว้ก่อนนอน',
+        );
+      case AdviceKind.activityLow:
+        return _t(
+          'Add a 20–30 minute walk during the day, and avoid hard exercise right before bed.',
+          'เดินเพิ่ม 20–30 นาทีระหว่างวัน และเลี่ยงออกกำลังกายหนักก่อนนอน',
+        );
+      case AdviceKind.windDown:
+        return _t(
+          'Dim the lights and put screens away 30 minutes before bed. Skip caffeine after noon.',
+          'หรี่ไฟและงดหน้าจอ 30 นาทีก่อนนอน เลี่ยงคาเฟอีนหลังเที่ยง',
+        );
+      case AdviceKind.keepRoutine:
+        return _t(
+          'Keep a regular bedtime and wake time. Consistency is what helps most.',
+          'เข้านอนและตื่นให้เป็นเวลา ความสม่ำเสมอช่วยได้มากที่สุด',
+        );
+    }
+  }
+
+  // ---------- คำแนะนำระยะยาว (หน้า Stats) ----------
+  String get longTermTitle => _t('Long-term advice', 'คำแนะนำระยะยาว');
+  String longTermBasedOn(int days) =>
+      _t('Based on $days days of check-ins', 'จากเช็กอิน $days วัน');
+  String longTermLocked(int days) => _t(
+        'Check in on at least $days different days in this period to see long-term advice.',
+        'เช็กอินให้ได้อย่างน้อย $days วันในช่วงนี้ เพื่อดูคำแนะนำระยะยาว',
+      );
+  String get longTermNote => _t(
+        'General wellness tips from your own data, not medical advice.',
+        'คำแนะนำทั่วไปจากข้อมูลของคุณ ไม่ใช่คำแนะนำทางการแพทย์',
+      );
+
+  String longTermText(LongTermTip tip) {
+    final n = tip.value.round();
+    final h = tip.value.toStringAsFixed(1);
+    switch (tip.kind) {
+      case LongTermKind.trendUp:
+        return _t(
+          'Your average score rose by $n points over this period. Keep the habits you changed recently.',
+          'คะแนนเฉลี่ยของคุณเพิ่มขึ้น $n คะแนนในช่วงนี้ รักษานิสัยที่ปรับล่าสุดไว้',
+        );
+      case LongTermKind.trendDown:
+        return _t(
+          'Your average score dropped by $n points over this period. Check the factors above and restore one habit first.',
+          'คะแนนเฉลี่ยของคุณลดลง $n คะแนนในช่วงนี้ ดูปัจจัยด้านบนแล้วเริ่มคืนนิสัยทีละข้อ',
+        );
+      case LongTermKind.trendStable:
+        return _t(
+          'Your score has stayed steady around $n. To improve it, change one habit at a time.',
+          'คะแนนของคุณคงที่ราว $n ถ้าอยากให้ดีขึ้น ให้ปรับทีละนิสัย',
+        );
+      case LongTermKind.irregular:
+        return _t(
+          'Your sleep length varies by about $h hrs from day to day. A steadier schedule may help.',
+          'ชั่วโมงนอนของคุณต่างกันราว $h ชม. ในแต่ละวัน ตารางที่สม่ำเสมอขึ้นอาจช่วยได้',
+        );
+      case LongTermKind.shortAverage:
+        return _t(
+          'You average $h hrs, under the usual ${tip.low}–${tip.high} hrs. Move bedtime earlier a little at a time.',
+          'คุณนอนเฉลี่ย $h ชม. ต่ำกว่าช่วงทั่วไป ${tip.low}–${tip.high} ชม. ลองเลื่อนเวลานอนให้เร็วขึ้นทีละนิด',
+        );
+      case LongTermKind.longAverage:
+        return _t(
+          'You average $h hrs, above the usual ${tip.low}–${tip.high} hrs. A fixed wake-up time and daytime light may help.',
+          'คุณนอนเฉลี่ย $h ชม. สูงกว่าช่วงทั่วไป ${tip.low}–${tip.high} ชม. ตื่นเวลาเดิมและรับแสงตอนกลางวันอาจช่วยได้',
+        );
+      case LongTermKind.stressHigh:
+        return _t(
+          'Stress averages $h/10. A daily wind-down routine, or talking with someone you trust, may help.',
+          'ความเครียดเฉลี่ย $h/10 ลองมีกิจวัตรผ่อนคลายทุกวัน หรือคุยกับคนที่ไว้ใจ',
+        );
+      case LongTermKind.activityLow:
+        return _t(
+          'Activity averages $n min a day. Build up toward 30 minutes on most days.',
+          'ขยับร่างกายเฉลี่ย $n นาทีต่อวัน ค่อยๆ เพิ่มให้ถึง 30 นาทีเกือบทุกวัน',
+        );
+      case LongTermKind.lowSpell:
+        return _t(
+          'Scores stayed low across $n days. If poor sleep continues and affects daily life, consider talking to a doctor or health professional.',
+          'คะแนนต่ำต่อเนื่อง $n วัน ถ้านอนไม่ดีต่อเนื่องและกระทบชีวิตประจำวัน ควรปรึกษาแพทย์หรือผู้เชี่ยวชาญ',
+        );
+      case LongTermKind.steadyGood:
+        return _t(
+          'Scores have stayed high. Keep your routine and review your stats weekly to spot changes early.',
+          'คะแนนอยู่ในระดับสูงต่อเนื่อง รักษากิจวัตรไว้ และดูสถิติทุกสัปดาห์เพื่อเห็นการเปลี่ยนแปลงเร็ว',
+        );
+    }
+  }
 
   // ข้อความ factors / recommendation มาจาก backend เป็นภาษาอังกฤษ (และถูกเก็บใน
   // ประวัติเป็นภาษาอังกฤษด้วย) จึงแปลตอนแสดงผล ข้อความที่ไม่รู้จักจะแสดงตามเดิม

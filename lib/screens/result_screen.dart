@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_result.dart';
+import '../services/sleep_advice.dart';
 import '../services/sleep_stats.dart';
 import '../widgets/quality_badge.dart';
 
@@ -78,6 +79,8 @@ class _ResultScreenState extends State<ResultScreen>
             _buildFactorsCard(context, result),
             const SizedBox(height: 16),
             _buildRecommendationCard(context, result),
+            const SizedBox(height: 16),
+            _buildAdviceCard(context, result),
             const SizedBox(height: 16),
             _buildDisclaimerCard(context),
             const SizedBox(height: 24),
@@ -417,6 +420,62 @@ class _ResultScreenState extends State<ResultScreen>
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  /// คำแนะนำตามคะแนนและข้อมูลที่กรอก (คำนวณฝั่งแอป ดู sleep_advice.dart)
+  Widget _buildAdviceCard(BuildContext context, SleepResult result) {
+    final s = S.of(context);
+    final band = scoreBandFor(result.displayScore);
+    final tips = adviceForResult(result);
+
+    return _card(
+      context,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cardTitle(context, s.adviceTitle),
+          const SizedBox(height: 12),
+          Text(
+            s.scoreBandTitle(band),
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w700,
+              color: _accentPurple(context),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            s.scoreBandText(band),
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: AppTheme.textSecondaryColor(context),
+            ),
+          ),
+          for (final tip in tips)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _iconTile(context, tip.icon),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      s.adviceText(tip),
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        height: 1.5,
+                        color: AppTheme.textPrimaryColor(context),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
