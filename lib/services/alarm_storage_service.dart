@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/alarm.dart';
 
@@ -8,6 +9,10 @@ class AlarmStorageService {
   static final AlarmStorageService instance = AlarmStorageService._();
 
   static const _storageKey = 'sleep_alarms_v1';
+
+  /// เพิ่มค่าเมื่อรายการถูกล้างจากนอกหน้ารายการปลุก (รีเซ็ตข้อมูลทั้งหมด)
+  /// หน้ารายการอยู่ใน IndexedStack ไม่ถูกสร้างใหม่ จึงต้องฟังค่านี้เพื่อโหลดใหม่
+  final ValueNotifier<int> externalChanges = ValueNotifier<int>(0);
 
   Future<List<SleepAlarm>> loadAlarms() async {
     final prefs = await SharedPreferences.getInstance();

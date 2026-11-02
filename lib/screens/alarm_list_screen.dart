@@ -23,7 +23,14 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
   @override
   void initState() {
     super.initState();
+    AlarmStorageService.instance.externalChanges.addListener(_load);
     _load();
+  }
+
+  @override
+  void dispose() {
+    AlarmStorageService.instance.externalChanges.removeListener(_load);
+    super.dispose();
   }
 
   void _sortByWakeTime(List<SleepAlarm> alarms) => alarms.sort((a, b) =>
