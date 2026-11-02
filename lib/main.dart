@@ -5,6 +5,8 @@ import 'l10n/app_strings.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'screens/alarm_ringing_screen.dart';
+import 'services/alarm_scheduler_service.dart';
+import 'services/alarm_storage_service.dart';
 import 'services/route_observer.dart';
 import 'services/profile_service.dart';
 import 'services/notification_service.dart'; // 👈 เพิ่ม
@@ -75,13 +77,31 @@ class _SleepWiseAppState extends State<SleepWiseApp> {
       return;
     }
     _ringingScreenOpen = true;
-    navigator
-        .push(
-          MaterialPageRoute(
-            builder: (_) => AlarmRingingScreen(alarmSettings: alarm),
-          ),
-        )
-        .then((_) => _ringingScreenOpen = false);
+    _snoozeMinutesFor(alarm.id).then((snoozeMinutes) {
+      navigator
+          .push(
+            MaterialPageRoute(
+              builder: (_) => AlarmRingingScreen(
+                alarmSettings: alarm,
+                snoozeMinutes: snoozeMinutes,
+              ),
+            ),
+          )
+          .then((_) => _ringingScreenOpen = false);
+    });
+  }
+
+  /// เวลาเลื่อนปลุกที่ผู้ใช้ตั้งไว้ในปลุกอันนี้
+  /// ถ้าอ่านไม่ได้ให้ใช้ค่าเริ่มต้น เพราะหน้าปลุกต้องขึ้นเสมอ ห้ามรอจนเสียงดังเปล่าๆ
+  Future<int> _snoozeMinutesFor(int nativeId) async {
+    try {
+      final alarms = await AlarmStorageService.instance
+          .loadAlarms()
+          .timeout(const Duration(seconds: 2));
+      final alarm = AlarmScheduler.findByNativeId(alarms, nativeId);
+      if (alarm != null) return alarm.snoozeMinutes;
+    } catch (_) {}
+    return AlarmRingingScreen.defaultSnoozeMinutes;
   }
 
   @override

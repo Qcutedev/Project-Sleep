@@ -11,6 +11,19 @@ import '../models/alarm.dart';
 class AlarmScheduler {
   static int nativeIdFor(int alarmId, int weekday) => alarmId * 10 + weekday;
 
+  /// หาปลุกต้นทางจาก id ของ native alarm ที่กำลังดัง (ย้อนสูตรของ [nativeIdFor])
+  /// คืน null ถ้าไม่พบ เช่น ปลุกถูกลบไปแล้ว
+  static SleepAlarm? findByNativeId(List<SleepAlarm> alarms, int nativeId) {
+    for (final a in alarms) {
+      if (a.repeatDays.isEmpty) {
+        if (a.id == nativeId) return a;
+      } else if (a.repeatDays.any((day) => nativeIdFor(a.id, day) == nativeId)) {
+        return a;
+      }
+    }
+    return null;
+  }
+
   /// หา DateTime ของ "วันซ้ำ" (weekday) ครั้งถัดไปที่ยังไม่ผ่านไป เทียบกับเวลาที่ตั้ง
   static DateTime nextOccurrenceForWeekday(TimeOfDay time, int weekday, {DateTime? now}) {
     final n = now ?? DateTime.now();

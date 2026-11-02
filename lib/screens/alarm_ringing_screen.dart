@@ -11,10 +11,13 @@ class AlarmRingingScreen extends StatelessWidget {
   final AlarmSettings alarmSettings;
   final int snoozeMinutes;
 
+  /// ใช้เมื่อหาปลุกต้นทางไม่พบ
+  static const int defaultSnoozeMinutes = 5;
+
   const AlarmRingingScreen({
     super.key,
     required this.alarmSettings,
-    this.snoozeMinutes = 5,
+    this.snoozeMinutes = defaultSnoozeMinutes,
   });
 
   Future<void> _stop(BuildContext context) async {
