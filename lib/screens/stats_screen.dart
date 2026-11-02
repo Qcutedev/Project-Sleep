@@ -195,6 +195,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                tooltip: s.back,
                 onPressed: () => Navigator.pop(context),
               ),
               const SizedBox(width: 10),
@@ -301,36 +302,40 @@ class _StatsScreenState extends State<StatsScreen> {
         children: options.map((opt) {
           final selected = _range == opt.$1;
           return Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() {
-                _range = opt.$1;
-                _showAllCheckIns = false;
-              }),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                decoration: BoxDecoration(
-                  color: selected ? AppTheme.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: selected
-                      ? [
-                          BoxShadow(
-                            color: AppTheme.primary.withValues(alpha: 0.35),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : [],
-                ),
-                alignment: Alignment.center,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(
-                    opt.$2,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: selected ? Colors.white : AppTheme.textSecondaryColor(context),
+            child: Semantics(
+              button: true,
+              selected: selected,
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _range = opt.$1;
+                  _showAllCheckIns = false;
+                }),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  decoration: BoxDecoration(
+                    color: selected ? AppTheme.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: AppTheme.primary.withValues(alpha: 0.35),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  alignment: Alignment.center,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      opt.$2,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: selected ? Colors.white : AppTheme.textSecondaryColor(context),
+                      ),
                     ),
                   ),
                 ),
@@ -437,23 +442,27 @@ class _StatsScreenState extends State<StatsScreen> {
               children: options.map((opt) {
                 final selected = _metric == opt.$1;
                 return Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _metric = opt.$1),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 7),
-                      decoration: BoxDecoration(
-                        color: selected ? AppTheme.primary : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      alignment: Alignment.center,
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          opt.$2,
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            fontWeight: FontWeight.w600,
-                            color: selected ? Colors.white : AppTheme.textMutedColor(context),
+                  child: Semantics(
+                    button: true,
+                    selected: selected,
+                    child: GestureDetector(
+                      onTap: () => setState(() => _metric = opt.$1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 7),
+                        decoration: BoxDecoration(
+                          color: selected ? AppTheme.primary : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        alignment: Alignment.center,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            opt.$2,
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: selected ? Colors.white : AppTheme.textMutedColor(context),
+                            ),
                           ),
                         ),
                       ),

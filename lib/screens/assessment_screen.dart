@@ -376,35 +376,39 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
   /// [value] คือค่าที่ส่งให้โมเดล ('Male' / 'Female') ส่วน [label] คือข้อความที่แสดงตามภาษา
   Widget _buildGenderOption(BuildContext context, String value, String label, IconData icon) {
     final bool selected = _gender == value;
-    return GestureDetector(
-      onTap: () => setState(() => _gender = value),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: selected
-              ? (AppTheme.isDark(context)
-                  ? AppTheme.primary.withValues(alpha: 0.18)
-                  : AppTheme.primaryLight)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? AppTheme.primary : AppTheme.borderColor(context),
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 20, color: selected ? AppTheme.primary : AppTheme.textMutedColor(context)),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? AppTheme.primary : AppTheme.textPrimaryColor(context),
-              ),
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        onTap: () => setState(() => _gender = value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: selected
+                ? (AppTheme.isDark(context)
+                    ? AppTheme.primary.withValues(alpha: 0.18)
+                    : AppTheme.primaryLight)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: selected ? AppTheme.primary : AppTheme.borderColor(context),
+              width: selected ? 1.5 : 1,
             ),
-          ],
+          ),
+          child: Column(
+            children: [
+              Icon(icon, size: 20, color: selected ? AppTheme.primary : AppTheme.textMutedColor(context)),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                  color: selected ? AppTheme.primary : AppTheme.textPrimaryColor(context),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

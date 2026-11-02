@@ -802,6 +802,21 @@ class S {
       _t('Snoozed until $time', 'เลื่อนปลุกถึง $time น.');
   String get alarmRingNotifBody => _t('Time to wake up!', 'ได้เวลาตื่นแล้ว!');
 
+  // ---------- ข้อความสำหรับโปรแกรมอ่านหน้าจอ ----------
+  String get back => _t('Back', 'ย้อนกลับ');
+  String get moreOptions => _t('More options', 'ตัวเลือกเพิ่มเติม');
+  String get playSound => _t('Play', 'เล่น');
+  String get pauseSound => _t('Pause', 'หยุดชั่วคราว');
+  String get closePlayer => _t('Close player', 'ปิดตัวเล่นเสียง');
+  String get addFavorite => _t('Add to favorites', 'เพิ่มในรายการโปรด');
+  String get removeFavorite => _t('Remove from favorites', 'เอาออกจากรายการโปรด');
+  String scoreSemantics(int score) =>
+      _t('Score $score out of 100', 'คะแนน $score จาก 100');
+  String chartSemantics(String metric, int days, String latest, String high, String low) => _t(
+        '$metric chart, $days days. Latest $latest, highest $high, lowest $low.',
+        'กราฟ$metric $days วัน ล่าสุด $latest สูงสุด $high ต่ำสุด $low',
+      );
+
   // ---------- Sounds ----------
   String get sleepSounds => _t('Sleep Sounds', 'เสียงกล่อมนอน');
   String nowPlayingName(String name) =>

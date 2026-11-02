@@ -636,6 +636,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                     ),
                   ),
                   PopupMenuButton<String>(
+                    tooltip: S.of(context).moreOptions,
                     icon: Icon(Icons.more_vert, size: 18, color: AppTheme.textMutedColor(context)),
                     padding: EdgeInsets.zero,
                     onSelected: (value) {
