@@ -40,7 +40,7 @@ String itemsCount(int n) => _t('$n items', '$n รายการ');
 ### สี
 
 - ใช้ตัวช่วยที่รับ `context` เสมอ เพื่อให้โหมดมืดถูกต้อง: `AppTheme.bg`, `surfaceColor`, `surfaceMutedColor`, `textPrimaryColor`, `textSecondaryColor`, `textMutedColor`, `borderColor`, `warningBgColor`, `warningTextColor`
-- ห้ามใช้ค่าคงที่อย่าง `AppTheme.textPrimary` หรือ `AppTheme.surface` ตรงๆ ในหน้าใหม่ เพราะจะผิดในโหมดมืด (`about_screen.dart` ยังเป็นแบบเก่า)
+- ห้ามใช้ค่าคงที่อย่าง `AppTheme.textPrimary` หรือ `AppTheme.surface` ตรงๆ ในหน้าใหม่ เพราะจะผิดในโหมดมืด
 - สีตามคุณภาพการนอน: `AppTheme.qualityColor(raw)` และ `qualityBgColor(raw)` (เขียว / เหลืองน้ำตาล / แดง)
 - สีเน้น: `AppTheme.primary` ในโหมดมืดข้อความหรือไอคอนสีม่วงบนพื้นเข้มใช้ `AppTheme.accent`
 
@@ -77,6 +77,13 @@ String itemsCount(int n) => _t('$n items', '$n รายการ');
 - อย่ากำหนดความสูงตายตัวให้กล่องที่มีข้อความหลายบรรทัด
 
 หลังแก้ UI ให้ตรวจด้วยการเรนเดอร์จริงตามวิธีใน [BUILD.md](BUILD.md) ทั้งสองภาษา
+
+## โปรแกรมอ่านหน้าจอ
+
+- ปุ่มที่ทำเองด้วย `GestureDetector` ต้องครอบ `Semantics(button: true, ...)` ถ้าเป็นตัวเลือกให้ใส่ `selected` ด้วย ถ้าเป็นไอคอนล้วนให้ใส่ `label`
+- `IconButton` และ `PopupMenuButton` ต้องมี `tooltip` จาก `S` ไม่อย่างนั้นจะแสดงข้อความอังกฤษของ Flutter
+- กราฟและตัวเลขที่มีอนิเมชันให้ใส่ `Semantics(container: true, excludeSemantics: true, label: ...)` สรุปเป็นประโยค
+- ภาพตกแต่ง เช่น มาสคอต ให้ซ่อนด้วย `ExcludeSemantics`
 
 ## ถ้อยคำด้านสุขภาพ
 

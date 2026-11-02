@@ -1,11 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// กุญแจเซ็นแอปอยู่นอก git (android/key.properties) ถ้าไม่มีไฟล์นี้จะใช้กุญแจ debug แทน
+// เพื่อให้เครื่องอื่นและ CI ยัง build ได้ ดูขั้นตอนใน docs/BUILD.md
+val keyProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
 android {
-    namespace = "com.example.sleepwise_ai"
+    namespace = "com.qcutedev.sleepwise"
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
@@ -16,8 +25,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.sleepwise_ai"
+        applicationId = "com.qcutedev.sleepwise"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24 // flutter_local_notifications requires minSdk 24+
@@ -30,11 +38,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (!keyProperties.isEmpty) {
+            create("release") {
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(
+                if (keyProperties.isEmpty) "debug" else "release",
+            )
         }
     }
 }

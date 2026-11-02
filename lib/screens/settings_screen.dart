@@ -1,12 +1,17 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
+import '../services/history_export.dart';
+import '../services/history_service.dart';
 import '../services/notification_service.dart';
 import '../services/alarm_notification_service.dart';
 import '../services/alarm_scheduler_service.dart';
 import '../services/alarm_storage_service.dart';
 import '../services/profile_service.dart';
+import '../services/weekly_summary.dart';
 import '../widgets/profile_avatar.dart';
 import 'profile_screen.dart';
 
@@ -30,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _dailyReminder = false;
   String _appearance = 'light';
   String _language = 'en';
+  double _sleepGoal = SleepGoalService.defaultHours;
 
   static const String _appVersion = '1.0.0';
 
@@ -41,8 +47,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final sleepGoal = await SleepGoalService.load();
     if (!mounted) return;
     setState(() {
+      _sleepGoal = sleepGoal;
       _durationUnit = prefs.getString(_kDurationUnit) ?? 'hours';
       _sleepReminder = prefs.getBool(_kSleepReminder) ?? false;
       _dailyReminder = prefs.getBool(_kDailyReminder) ?? false;
@@ -96,6 +104,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await AlarmNotificationService.instance.syncWithAlarms(alarms);
   }
 
+  /// ให้ผู้ใช้เลือกที่บันทึกเอง ไม่ต้องขอสิทธิ์เข้าถึงไฟล์ของเครื่อง
+  Future<void> _exportHistory() async {
+    final s = S.current;
+    final messenger = ScaffoldMessenger.of(context);
+    final history = await HistoryService().getHistory();
+    if (history.isEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(s.exportEmpty)));
+      return;
+    }
+    try {
+      final saved = await FilePicker.saveFile(
+        fileName: historyFileName(DateTime.now()),
+        bytes: Uint8List.fromList(csvBytes(historyToCsv(history))),
+        mimeType: 'text/csv',
+        dialogTitle: s.exportHistory,
+      );
+      if (saved != null) {
+        messenger.showSnackBar(SnackBar(content: Text(s.exportDone)));
+      }
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(s.exportFailed)));
+    }
+  }
+
   Future<void> _confirmResetAllData() async {
     final s = S.current;
     final confirmed = await showDialog<bool>(
@@ -142,6 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _dailyReminder = false;
         _appearance = 'light';
         _language = 'en';
+        _sleepGoal = SleepGoalService.defaultHours;
       });
       AppTheme.themeNotifier.value = ThemeMode.light;
       AppLanguage.notifier.value = 'en';
@@ -237,6 +270,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+
+          _sectionTitle(context, s.sleepGoalTitle),
+          _card(
+            context,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.sleepGoalLabel,
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textPrimary),
+                        ),
+                      ),
+                      Text(
+                        s.hoursValue(_sleepGoal.toStringAsFixed(1)),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _sleepGoal,
+                    min: SleepGoalService.minHours,
+                    max: SleepGoalService.maxHours,
+                    divisions: 10,
+                    label: s.hoursValue(_sleepGoal.toStringAsFixed(1)),
+                    onChanged: (v) => setState(() => _sleepGoal = v),
+                    onChangeEnd: SleepGoalService.save,
+                  ),
+                  Text(
+                    s.sleepGoalHint,
+                    style: TextStyle(fontSize: 11, color: textMuted),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -427,6 +500,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+
+          _sectionTitle(context, s.yourData),
+          _card(
+            context,
+            child: ListTile(
+              leading: Icon(Icons.file_download_outlined, color: textSecondary),
+              title: Text(
+                s.exportHistory,
+                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: textPrimary),
+              ),
+              subtitle: Text(
+                s.exportHistorySubtitle,
+                style: TextStyle(fontSize: 11, color: textMuted),
+              ),
+              trailing: Icon(Icons.chevron_right_rounded, color: textMuted),
+              onTap: _exportHistory,
             ),
           ),
 

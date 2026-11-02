@@ -9,6 +9,7 @@ import 'services/alarm_scheduler_service.dart';
 import 'services/alarm_storage_service.dart';
 import 'services/route_observer.dart';
 import 'services/profile_service.dart';
+import 'services/onboarding_service.dart';
 import 'services/notification_service.dart'; // 👈 เพิ่ม
 
 /// ใช้ navigate ไปหน้า Alarm Ringing ได้จากทุกที่ในแอป
@@ -39,6 +40,9 @@ void main() async {
 
   // โหลดโปรไฟล์ไว้ก่อน หน้า Home จะได้แสดงรูปและชื่อทันทีโดยไม่กระพริบ
   await ProfileService.instance.load();
+
+  // อ่านก่อนเปิดแอป เพื่อให้หน้า Splash รู้ทันทีว่าต้องไปหน้าแนะนำหรือหน้าหลัก
+  await OnboardingService.load();
 
   runApp(const SleepWiseApp());
 }

@@ -75,6 +75,7 @@ class MiniPlayerBar extends StatelessWidget {
               ),
             ),
             IconButton(
+              tooltip: controller.isFavorite(sound) ? s.removeFavorite : s.addFavorite,
               icon: Icon(
                 controller.isFavorite(sound) ? Icons.favorite : Icons.favorite_border,
                 color: Colors.white,
@@ -82,31 +83,39 @@ class MiniPlayerBar extends StatelessWidget {
               ),
               onPressed: () => controller.toggleFavorite(sound),
             ),
-            GestureDetector(
-              onTap: () => controller.togglePlayPause(),
-              child: Container(
-                width: 32,
-                height: 32,
-                decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
-                child: Icon(
-                  controller.isPlaying ? Icons.pause : Icons.play_arrow,
-                  color: _accent,
-                  size: 18,
+            Semantics(
+              button: true,
+              label: controller.isPlaying ? s.pauseSound : s.playSound,
+              child: GestureDetector(
+                onTap: () => controller.togglePlayPause(),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white),
+                  child: Icon(
+                    controller.isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: _accent,
+                    size: 18,
+                  ),
                 ),
               ),
             ),
             const SizedBox(width: 6),
             // ปุ่มกากบาท: ปิดเสียงปัจจุบันทิ้ง ทำให้ mini bar หายไปด้วย (currentSound == null)
-            GestureDetector(
-              onTap: () => controller.stopCurrentSound(),
-              child: Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.close,
-                  color: Colors.white.withValues(alpha: 0.85),
-                  size: 18,
+            Semantics(
+              button: true,
+              label: s.closePlayer,
+              child: GestureDetector(
+                onTap: () => controller.stopCurrentSound(),
+                child: Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    size: 18,
+                  ),
                 ),
               ),
             ),

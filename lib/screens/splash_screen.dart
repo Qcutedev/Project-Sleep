@@ -2,7 +2,9 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
+import '../services/onboarding_service.dart';
 import 'main_shell.dart';
+import 'onboarding_screen.dart';
 
 /// หน้าเปิดแอป: ท้องฟ้ากลางคืน โลโก้ที่ขยับได้ลอยขึ้นมา
 /// ชื่อแอปขึ้นทีละตัวอักษร จบด้วยการจางเข้าหน้าหลัก
@@ -15,9 +17,13 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  // ความยาวทั้งหมดก่อนเข้าหน้าหลัก ทุกช่วงเวลาข้างล่างอ้างอิงค่านี้
+  // เส้นเวลาที่ใช้ออกแบบอนิเมชัน ทุกช่วงเวลาข้างล่างอ้างอิงค่านี้
   static const int _totalMs = 4500;
+  // เวลาเล่นจริง เปิดแอปทุกครั้งต้องผ่านหน้านี้ จึงไม่ควรนาน ผู้ใช้แตะเพื่อข้ามได้ด้วย
+  static const int _playMs = 2000;
   static const String _title = 'SleepWise AI';
+
+  bool _leaving = false;
 
   late final AnimationController _intro; // เล่นครั้งเดียว
   late final AnimationController _ambient; // ดาวกะพริบ เมฆลอย ดาวตก วนซ้ำ
@@ -37,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _intro = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: _totalMs),
+      duration: const Duration(milliseconds: _playMs),
     );
     _ambient = AnimationController(
       vsync: this,
@@ -58,26 +64,32 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _goHome() {
-    if (!mounted) return;
+    // แตะข้ามแล้วอนิเมชันยังวิ่งจบได้อีก ต้องไปหน้าหลักแค่ครั้งเดียว
+    if (!mounted || _leaving) return;
+    _leaving = true;
     final route = ModalRoute.of(context);
     if (route != null && !route.isCurrent) {
       // มีหน้าอื่น (เช่นหน้าปลุกดัง) ทับอยู่บน Splash แล้ว:
       // เปลี่ยนเฉพาะ Splash ที่อยู่ข้างล่าง ห้ามไปแทนที่หน้าบนสุด
       Navigator.of(context).replace(
         oldRoute: route,
-        newRoute: MaterialPageRoute(builder: (context) => const MainShell()),
+        newRoute: MaterialPageRoute(builder: (context) => _nextPage()),
       );
       return;
     }
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 450),
-        pageBuilder: (context, animation, secondary) => const MainShell(),
+        pageBuilder: (context, animation, secondary) => _nextPage(),
         transitionsBuilder: (context, animation, secondary, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
     );
   }
+
+  Widget _nextPage() => OnboardingService.shouldShow
+      ? const OnboardingScreen()
+      : const MainShell();
 
   @override
   void dispose() {
@@ -118,9 +130,12 @@ class _SplashScreenState extends State<SplashScreen>
     final s = S.of(context);
     return Scaffold(
       backgroundColor: _NightSkyPainter.topColor,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
+      body: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _goHome,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
           RepaintBoundary(
             child: CustomPaint(
               painter: _NightSkyPainter(fadeIn: _sky, ambient: _ambient),
@@ -167,7 +182,8 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }

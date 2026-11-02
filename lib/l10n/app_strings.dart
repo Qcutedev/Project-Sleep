@@ -78,6 +78,47 @@ class S {
   // ---------- Splash ----------
   String get splashSubtitle => _t('Understand your sleep', 'เข้าใจการนอนของคุณ');
 
+  // ---------- Onboarding ----------
+  String get onboardingSkip => _t('Skip', 'ข้าม');
+  String get onboardingNext => _t('Next', 'ถัดไป');
+  String get onboardingStart => _t('Get started', 'เริ่มใช้งาน');
+  String onboardingPageOf(int page, int total) =>
+      _t('Page $page of $total', 'หน้า $page จาก $total');
+  String get onboardingWelcomeTitle =>
+      _t('Welcome to SleepWise AI', 'ยินดีต้อนรับสู่ SleepWise AI');
+  String get onboardingWelcomeBody => _t(
+        'A short daily check-in to help you see your sleep patterns.',
+        'เช็กอินสั้นๆ ทุกวัน เพื่อให้คุณเห็นรูปแบบการนอนของตัวเอง',
+      );
+  String get onboardingHowTitle => _t('How it works', 'แอปนี้ทำอะไรได้');
+  String get onboardingStep1Title => _t('Check in daily', 'เช็กอินทุกวัน');
+  String get onboardingStep1Body => _t(
+        'Enter your sleep, stress, and activity. It takes about a minute.',
+        'กรอกการนอน ความเครียด และกิจกรรม ใช้เวลาราว 1 นาที',
+      );
+  String get onboardingStep2Title =>
+      _t('See your score and trend', 'ดูคะแนนและแนวโน้ม');
+  String get onboardingStep2Body => _t(
+        'A model estimates your sleep quality, with general tips.',
+        'โมเดลจะทำนายคุณภาพการนอน พร้อมคำแนะนำทั่วไป',
+      );
+  String get onboardingStep3Title =>
+      _t('Plan your night', 'วางแผนการนอน');
+  String get onboardingStep3Body => _t(
+        'Use the sleep-cycle alarm and calming sounds.',
+        'ใช้นาฬิกาปลุกตามรอบการนอนและเสียงผ่อนคลาย',
+      );
+  String get onboardingDisclaimer => _t(
+        'This is an educational prototype. Results are model predictions, not a medical diagnosis.',
+        'แอปนี้เป็นต้นแบบเพื่อการศึกษา ผลที่ได้เป็นการทำนายของโมเดล ไม่ใช่การวินิจฉัยทางการแพทย์',
+      );
+  String get onboardingProfileTitle =>
+      _t('A little about you', 'ข้อมูลของคุณ');
+  String get onboardingProfileBody => _t(
+        'Used to fill in each assessment. It stays on this device, and you can change it anytime.',
+        'ใช้เติมในแบบประเมินแต่ละครั้ง เก็บไว้ในเครื่องนี้ และแก้ไขได้ทุกเมื่อ',
+      );
+
   // ---------- Bottom navigation ----------
   String get navAlarm => _t('Alarm', 'นาฬิกาปลุก');
   String get navSounds => _t('Sounds', 'เสียง');
@@ -145,9 +186,21 @@ class S {
   // ---------- Assessment ----------
   String get assessmentTitle => _t('Sleep assessment', 'ประเมินการนอน');
   String get sleepDuration => _t('Sleep duration', 'ระยะเวลาการนอน');
-  String get sleepDurationHint => _t(
-        'How many hours did you sleep last night?',
-        'เมื่อคืนคุณนอนกี่ชั่วโมง?',
+  String get sleepTimesHint => _t(
+        'When did you sleep and wake up?',
+        'เมื่อคืนนอนและตื่นกี่โมง?',
+      );
+  String get bedtime => _t('Bedtime', 'เข้านอน');
+  String get wakeTime => _t('Wake time', 'ตื่นนอน');
+  String get hourLabel => _t('Hour', 'ชั่วโมง');
+  String get minuteLabel => _t('Minute', 'นาที');
+  String sleepOverLimitNote(int hours) => _t(
+        'Sleep over $hours hrs lowers the score.',
+        'นอนเกิน $hours ชม. คะแนนจะถูกปรับลด',
+      );
+  String longSleepAdjustedNote(int hours) => _t(
+        'Score lowered by an app rule for sleep over $hours hrs. This is not a model result.',
+        'คะแนนถูกลดตามกฎของแอปเมื่อนอนเกิน $hours ชม. ส่วนนี้ไม่ได้มาจากโมเดล',
       );
   String hoursValue(String h) => _t('$h hrs', '$h ชม.');
   String get stressLevel => _t('Stress level', 'ระดับความเครียด');
@@ -368,6 +421,7 @@ class S {
   // ประวัติเป็นภาษาอังกฤษด้วย) จึงแปลตอนแสดงผล ข้อความที่ไม่รู้จักจะแสดงตามเดิม
   static const Map<String, String> _factorsTh = {
     'Short sleep duration': 'นอนน้อย',
+    'Long sleep duration': 'นอนนาน',
     'High stress level': 'ความเครียดสูง',
     'Low physical activity': 'ขยับร่างกายน้อย',
   };
@@ -394,6 +448,33 @@ class S {
   }
   String recommendation(String raw) =>
       isThai ? (_recommendationsTh[raw] ?? raw) : raw;
+
+  // ---------- เป้าหมายการนอนและสรุปรายสัปดาห์ ----------
+  String get sleepGoalTitle => _t('Sleep Goal', 'เป้าหมายการนอน');
+  String get sleepGoalLabel => _t('Hours per night', 'ชั่วโมงต่อคืน');
+  String get sleepGoalHint => _t(
+        'Used in your weekly summary. Most adults aim for 7–9 hrs.',
+        'ใช้ในสรุปรายสัปดาห์ ผู้ใหญ่ส่วนใหญ่ตั้งเป้า 7–9 ชม.',
+      );
+  String get weeklySummaryTitle => _t('This week so far', 'สรุปสัปดาห์นี้');
+  String goalProgress(int met, int total, String goal) => _t(
+        'Reached your $goal-hour goal on $met of $total day${total == 1 ? '' : 's'}',
+        'ถึงเป้า $goal ชม. $met จาก $total วัน',
+      );
+  String weeklyChange(int change) {
+    if (change > 0) {
+      return _t('Average score up $change from last week', 'คะแนนเฉลี่ยเพิ่มขึ้น $change จากสัปดาห์ก่อน');
+    }
+    if (change < 0) {
+      return _t('Average score down ${-change} from last week', 'คะแนนเฉลี่ยลดลง ${-change} จากสัปดาห์ก่อน');
+    }
+    return _t('Average score same as last week', 'คะแนนเฉลี่ยเท่ากับสัปดาห์ก่อน');
+  }
+
+  String get weeklyNote => _t(
+        'A summary of your own entries, not a medical result.',
+        'สรุปจากข้อมูลที่คุณกรอก ไม่ใช่ผลทางการแพทย์',
+      );
 
   // ---------- Sleep stats ----------
   String get sleepStats => _t('Sleep stats', 'สถิติการนอน');
@@ -425,7 +506,7 @@ class S {
       _t('Average score by day', 'คะแนนเฉลี่ยตามวัน');
   String get insightsTitle =>
       _t('Patterns in your data', 'ข้อสังเกตจากข้อมูลของคุณ');
-  String get insightSleepHigh => _t('6.5 hrs or more', '6.5 ชม. ขึ้นไป');
+  String get insightSleepHigh => _t('6.5–10 hrs', '6.5–10 ชม.');
   String get insightSleepLow => _t('Under 6.5 hrs', 'น้อยกว่า 6.5 ชม.');
   String get insightStressHigh => _t('Level 7 or higher', 'ระดับ 7 ขึ้นไป');
   String get insightStressLow => _t('Below level 7', 'ต่ำกว่าระดับ 7');
@@ -444,26 +525,59 @@ class S {
   String get noDataInRange =>
       _t('No check-ins in this period', 'ไม่มีการเช็กอินในช่วงนี้');
 
+  // ---------- ความสม่ำเสมอของเวลาเข้านอน (หน้า Stats) ----------
+  String get bedtimeConsistencyTitle =>
+      _t('Bedtime consistency', 'ความสม่ำเสมอของเวลาเข้านอน');
+  String get averageBedtime => _t('Average bedtime', 'เข้านอนเฉลี่ย');
+  String get bedtimeSpread => _t('Usual variation', 'คลาดเคลื่อนราว');
+  String bedtimeSpreadValue(int minutes) => _t('±$minutes min', '±$minutes นาที');
+  String bedtimeNights(int nights) =>
+      _t('From $nights nights', 'จากข้อมูล $nights คืน');
+  String get bedtimeNote => _t(
+        'From your own entries. A steadier bedtime is general sleep advice, not a medical finding.',
+        'คำนวณจากข้อมูลที่คุณกรอก การเข้านอนให้สม่ำเสมอเป็นคำแนะนำทั่วไป ไม่ใช่ผลทางการแพทย์',
+      );
+
   // ---------- About ----------
   String get aboutTitle => _t('About SleepWise AI', 'เกี่ยวกับ SleepWise AI');
   String get aboutBody => _t(
         'SleepWise AI is an educational prototype built for a CPE310 '
             'course project. It estimates sleep quality (Good, Fair, or Poor) '
-            'from lifestyle inputs such as sleep duration, stress level, '
-            'physical activity, and screen time, using a machine learning '
-            'model trained by the project team.',
+            'from sleep duration, stress level, physical activity, age, and '
+            'gender, using a machine learning model.',
         'SleepWise AI เป็นต้นแบบเพื่อการศึกษาที่จัดทำขึ้นสำหรับโครงงานรายวิชา '
             'CPE310 แอปจะประเมินคุณภาพการนอน (ดี พอใช้ หรือไม่ดี) '
-            'จากข้อมูลการใช้ชีวิต เช่น ระยะเวลาการนอน ระดับความเครียด '
-            'กิจกรรมทางกาย และเวลาที่ใช้หน้าจอ โดยใช้โมเดล machine learning '
-            'ที่ทีมผู้จัดทำเป็นผู้ฝึก',
+            'จากระยะเวลาการนอน ระดับความเครียด กิจกรรมทางกาย อายุ และเพศ '
+            'โดยใช้โมเดล machine learning',
+      );
+  String get aboutModelTitle => _t('About the model', 'เกี่ยวกับโมเดล');
+  String get aboutModelType => _t(
+        'A random forest regression model (100 trees) trained on about 300 records.',
+        'โมเดล random forest regression (100 ต้น) ฝึกจากข้อมูลราว 300 รายการ',
+      );
+  String get aboutModelInfluence => _t(
+        'Sleep duration and stress level affect the score most. Physical activity and gender have very little effect.',
+        'ระยะเวลาการนอนและความเครียดมีผลต่อคะแนนมากที่สุด กิจกรรมทางกายและเพศมีผลน้อยมาก',
+      );
+  String get aboutModelRange => _t(
+        'The training data mostly covers 6–8 hrs of sleep and ages 28–52. Outside these ranges the score barely changes.',
+        'ข้อมูลที่ใช้ฝึกส่วนใหญ่อยู่ในช่วงนอน 6–8 ชม. และอายุ 28–52 ปี นอกช่วงนี้คะแนนแทบไม่เปลี่ยน',
+      );
+  String get aboutModelRules => _t(
+        'The factors and tips you see come from fixed rules, not from the model.',
+        'ปัจจัยและคำแนะนำที่แสดงมาจากกฎที่กำหนดไว้ ไม่ได้มาจากโมเดล',
+      );
+  String get aboutDataTitle => _t('Your data', 'ข้อมูลของคุณ');
+  String get aboutDataBody => _t(
+        'Your inputs are sent to the server only to get a prediction. History and profile stay on this device.',
+        'ข้อมูลที่กรอกถูกส่งไปยังเซิร์ฟเวอร์เพื่อทำนายผลเท่านั้น ส่วนประวัติและโปรไฟล์เก็บไว้ในเครื่องนี้',
       );
   String get aboutDisclaimer => _t(
-        'This application is an educational prototype. It is not '
-            'intended to diagnose, treat, or substitute advice from a '
-            'qualified healthcare professional.',
-        'แอปพลิเคชันนี้เป็นต้นแบบเพื่อการศึกษา ไม่ได้มีวัตถุประสงค์เพื่อ'
-            'วินิจฉัย รักษา หรือใช้แทนคำแนะนำจากบุคลากรทางการแพทย์',
+        'This application is an educational prototype and has not been '
+            'clinically validated. It is not intended to diagnose, treat, or '
+            'substitute advice from a qualified healthcare professional.',
+        'แอปพลิเคชันนี้เป็นต้นแบบเพื่อการศึกษา ยังไม่ผ่านการตรวจสอบทางคลินิก '
+            'ไม่ได้มีวัตถุประสงค์เพื่อวินิจฉัย รักษา หรือใช้แทนคำแนะนำจากบุคลากรทางการแพทย์',
       );
 
   // ---------- Settings ----------
@@ -570,6 +684,19 @@ class S {
       );
   String get resetDone =>
       _t('All app data has been reset', 'รีเซ็ตข้อมูลแอปทั้งหมดแล้ว');
+  String get yourData => _t('Your Data', 'ข้อมูลของคุณ');
+  String get exportHistory => _t('Export history', 'ส่งออกประวัติ');
+  String get exportHistorySubtitle => _t(
+        'Save your check-ins as a CSV file',
+        'บันทึกการเช็กอินเป็นไฟล์ CSV',
+      );
+  String get exportEmpty =>
+      _t('No check-ins to export yet', 'ยังไม่มีการเช็กอินให้ส่งออก');
+  String get exportDone => _t('History saved', 'บันทึกประวัติแล้ว');
+  String get exportFailed => _t(
+        'Could not save the file. Try again.',
+        'บันทึกไฟล์ไม่สำเร็จ ลองอีกครั้ง',
+      );
   String get appInformation => _t('App Information', 'ข้อมูลแอป');
   String get appNameLabel => _t('App name', 'ชื่อแอป');
   String get version => _t('Version', 'เวอร์ชัน');
@@ -679,6 +806,21 @@ class S {
   String snoozedUntil(String time) =>
       _t('Snoozed until $time', 'เลื่อนปลุกถึง $time น.');
   String get alarmRingNotifBody => _t('Time to wake up!', 'ได้เวลาตื่นแล้ว!');
+
+  // ---------- ข้อความสำหรับโปรแกรมอ่านหน้าจอ ----------
+  String get back => _t('Back', 'ย้อนกลับ');
+  String get moreOptions => _t('More options', 'ตัวเลือกเพิ่มเติม');
+  String get playSound => _t('Play', 'เล่น');
+  String get pauseSound => _t('Pause', 'หยุดชั่วคราว');
+  String get closePlayer => _t('Close player', 'ปิดตัวเล่นเสียง');
+  String get addFavorite => _t('Add to favorites', 'เพิ่มในรายการโปรด');
+  String get removeFavorite => _t('Remove from favorites', 'เอาออกจากรายการโปรด');
+  String scoreSemantics(int score) =>
+      _t('Score $score out of 100', 'คะแนน $score จาก 100');
+  String chartSemantics(String metric, int days, String latest, String high, String low) => _t(
+        '$metric chart, $days days. Latest $latest, highest $high, lowest $low.',
+        'กราฟ$metric $days วัน ล่าสุด $latest สูงสุด $high ต่ำสุด $low',
+      );
 
   // ---------- Sounds ----------
   String get sleepSounds => _t('Sleep Sounds', 'เสียงกล่อมนอน');

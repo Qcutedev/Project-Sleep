@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_result.dart';
+import '../services/long_sleep_rule.dart';
 import '../services/sleep_advice.dart';
 import '../services/sleep_stats.dart';
 import '../widgets/quality_badge.dart';
@@ -123,6 +124,7 @@ class _ResultScreenState extends State<ResultScreen>
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                tooltip: s.back,
                 onPressed: () => Navigator.of(context).pop(),
               ),
               const SizedBox(width: 10),
@@ -186,51 +188,57 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   Widget _buildScoreRing() {
-    return SizedBox(
-      width: 124,
-      height: 124,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 124,
-                height: 124,
-                child: CircularProgressIndicator(
-                  value: _progressAnimation.value,
-                  strokeWidth: 10,
-                  strokeCap: StrokeCap.round,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+    // อ่านค่าจริงเลย ไม่อ่านตัวเลขที่กำลังวิ่งของอนิเมชัน
+    return Semantics(
+      container: true,
+      label: S.of(context).scoreSemantics(widget.result.displayScore),
+      excludeSemantics: true,
+      child: SizedBox(
+        width: 124,
+        height: 124,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 124,
+                  height: 124,
+                  child: CircularProgressIndicator(
+                    value: _progressAnimation.value,
+                    strokeWidth: 10,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${(_progressAnimation.value * 100).round()}',
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.0,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${(_progressAnimation.value * 100).round()}',
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '/100',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.8),
+                    const SizedBox(height: 2),
+                    Text(
+                      '/100',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -370,6 +378,17 @@ class _ResultScreenState extends State<ResultScreen>
                 ],
               ),
             ),
+          if (result.factors.contains(longSleepFactor)) ...[
+            const SizedBox(height: 12),
+            Text(
+              s.longSleepAdjustedNote(longSleepThresholdFor(result.input.age).round()),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: AppTheme.textMutedColor(context),
+              ),
+            ),
+          ],
         ],
       ),
     );

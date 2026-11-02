@@ -61,17 +61,20 @@ class _SleepingMascotState extends State<SleepingMascot>
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
-      child: SizedBox(
-        width: widget.width,
-        height: widget.width *
-            _MascotPainter.designHeight /
-            _MascotPainter.designWidth,
-        child: CustomPaint(
-          painter: _MascotPainter(
-            animation: _controller,
-            isDark: widget.forceDark || AppTheme.isDark(context),
-            showBackdrop: widget.showBackdrop,
+    // เป็นภาพตกแต่ง ข้อความสถานะอยู่ในหน้า Loading แล้ว
+    return ExcludeSemantics(
+      child: RepaintBoundary(
+        child: SizedBox(
+          width: widget.width,
+          height: widget.width *
+              _MascotPainter.designHeight /
+              _MascotPainter.designWidth,
+          child: CustomPaint(
+            painter: _MascotPainter(
+              animation: _controller,
+              isDark: widget.forceDark || AppTheme.isDark(context),
+              showBackdrop: widget.showBackdrop,
+            ),
           ),
         ),
       ),
