@@ -7,6 +7,7 @@ import '../services/sleep_advice.dart';
 import '../services/sleep_stats.dart';
 import '../theme/app_theme.dart';
 import '../widgets/quality_badge.dart';
+import '../widgets/weekly_summary_card.dart';
 import '../widgets/sleep_trend_chart.dart';
 import '../widgets/stat_chip.dart';
 import 'result_screen.dart';
@@ -127,6 +128,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 children: [
                   _buildHeader(context, results),
                   const SizedBox(height: 20),
+                  WeeklySummaryCard(history: _history),
                   _buildRangeTabs(context),
                   const SizedBox(height: 20),
                   if (results.isEmpty)

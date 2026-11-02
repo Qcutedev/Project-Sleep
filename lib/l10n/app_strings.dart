@@ -361,6 +361,33 @@ class S {
   String recommendation(String raw) =>
       isThai ? (_recommendationsTh[raw] ?? raw) : raw;
 
+  // ---------- เป้าหมายการนอนและสรุปรายสัปดาห์ ----------
+  String get sleepGoalTitle => _t('Sleep Goal', 'เป้าหมายการนอน');
+  String get sleepGoalLabel => _t('Hours per night', 'ชั่วโมงต่อคืน');
+  String get sleepGoalHint => _t(
+        'Used in your weekly summary. Most adults aim for 7–9 hrs.',
+        'ใช้ในสรุปรายสัปดาห์ ผู้ใหญ่ส่วนใหญ่ตั้งเป้า 7–9 ชม.',
+      );
+  String get weeklySummaryTitle => _t('This week so far', 'สรุปสัปดาห์นี้');
+  String goalProgress(int met, int total, String goal) => _t(
+        'Reached your $goal-hour goal on $met of $total day${total == 1 ? '' : 's'}',
+        'ถึงเป้า $goal ชม. $met จาก $total วัน',
+      );
+  String weeklyChange(int change) {
+    if (change > 0) {
+      return _t('Average score up $change from last week', 'คะแนนเฉลี่ยเพิ่มขึ้น $change จากสัปดาห์ก่อน');
+    }
+    if (change < 0) {
+      return _t('Average score down ${-change} from last week', 'คะแนนเฉลี่ยลดลง ${-change} จากสัปดาห์ก่อน');
+    }
+    return _t('Average score same as last week', 'คะแนนเฉลี่ยเท่ากับสัปดาห์ก่อน');
+  }
+
+  String get weeklyNote => _t(
+        'A summary of your own entries, not a medical result.',
+        'สรุปจากข้อมูลที่คุณกรอก ไม่ใช่ผลทางการแพทย์',
+      );
+
   // ---------- Sleep stats ----------
   String get sleepStats => _t('Sleep stats', 'สถิติการนอน');
   String get range3Months => _t('3 Months', '3 เดือน');
