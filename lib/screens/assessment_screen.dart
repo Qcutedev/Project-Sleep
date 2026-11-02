@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_assessment_input.dart';
+import '../services/sleep_stats.dart';
 import 'loading_screen.dart';
 
 /// หน้ากรอกข้อมูล lifestyle ก่อนส่งไปทำนายคุณภาพการนอน
@@ -20,7 +21,12 @@ class AssessmentScreen extends StatefulWidget {
 }
 
 class _AssessmentScreenState extends State<AssessmentScreen> {
-  double _sleepDuration = 7;
+  static const _kLastBedtime = 'assessment_last_bedtime';
+  static const _kLastWakeTime = 'assessment_last_wake_time';
+
+  // ค่าเริ่มต้นได้ 7 ชม. เท่าค่าเดิมของสไลเดอร์
+  TimeOfDay _bedtime = const TimeOfDay(hour: 23, minute: 0);
+  TimeOfDay _wakeTime = const TimeOfDay(hour: 6, minute: 0);
   double _stressLevel = 5;
   double _physicalActivity = 30;
   double _age = 25;
@@ -42,6 +48,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     final savedAge = prefs.getString('settings_age');
     final savedGender = prefs.getString('settings_gender');
     final savedUnit = prefs.getString('settings_duration_unit') ?? 'hours';
+    final lastBedtime = parseClockTime(prefs.getString(_kLastBedtime));
+    final lastWakeTime = parseClockTime(prefs.getString(_kLastWakeTime));
 
     setState(() {
       if (savedAge != null && savedAge.isNotEmpty) {
@@ -56,12 +64,49 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
         _gender = 'Female';
       }
       _durationUnit = savedUnit;
+      if (lastBedtime != null) _bedtime = lastBedtime;
+      if (lastWakeTime != null) _wakeTime = lastWakeTime;
     });
+  }
+
+  double get _rawSleepHours => sleepHoursBetween(_bedtime, _wakeTime);
+  double get _sleepDuration =>
+      _rawSleepHours > maxSleepHours ? maxSleepHours : _rawSleepHours;
+
+  Future<void> _pickTime({required bool isBedtime}) async {
+    final s = S.current;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: isBedtime ? _bedtime : _wakeTime,
+      helpText: isBedtime ? s.bedtime : s.wakeTime,
+      cancelText: s.cancel,
+      confirmText: s.ok,
+      hourLabelText: s.hourLabel,
+      minuteLabelText: s.minuteLabel,
+      // ใช้แบบ 24 ชม. เพราะ AM/PM ในหน้านี้แปลไทยไม่ได้
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+        child: child!,
+      ),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      if (isBedtime) {
+        _bedtime = picked;
+      } else {
+        _wakeTime = picked;
+      }
+    });
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kLastBedtime, formatClockTime(_bedtime));
+    await prefs.setString(_kLastWakeTime, formatClockTime(_wakeTime));
   }
 
   void _submit() {
     final input = SleepAssessmentInput(
       sleepDuration: _sleepDuration,
+      bedtime: formatClockTime(_bedtime),
+      wakeTime: formatClockTime(_wakeTime),
       stressLevel: _stressLevel.round(),
       physicalActivity: _physicalActivity.round(),
       age: _age.round(),
@@ -84,22 +129,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          _buildSliderCard(
-            context: context,
-            title: s.sleepDuration,
-            subtitle: s.sleepDurationHint,
-            icon: Icons.bedtime_outlined,
-            value: _sleepDuration,
-            min: 0,
-            max: 10,
-            divisions: 20,
-            // ค่าที่เก็บจริงยังเป็นชั่วโมงเสมอ (ตรงกับ feature ของโมเดล)
-            // แค่เปลี่ยนตัวเลขที่โชว์ตามหน่วยที่ตั้งไว้ใน Settings
-            valueLabel: showMinutes
-                ? s.minutesShort((_sleepDuration * 60).round())
-                : s.hoursValue(_sleepDuration.toStringAsFixed(1)),
-            onChanged: (v) => setState(() => _sleepDuration = v),
-          ),
+          _buildSleepTimesCard(context, showMinutes),
           const SizedBox(height: 16),
           _buildSliderCard(
             context: context,
@@ -153,6 +183,138 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context)),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSleepTimesCard(BuildContext context, bool showMinutes) {
+    final s = S.of(context);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceColor(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.borderColor(context)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.isDark(context)
+                      ? AppTheme.primary.withValues(alpha: 0.18)
+                      : AppTheme.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.bedtime_outlined, color: AppTheme.primary, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(s.sleepDuration, style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimaryColor(context),
+                    )),
+                    Text(s.sleepTimesHint, style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.textMutedColor(context),
+                    )),
+                  ],
+                ),
+              ),
+              // ค่าที่เก็บจริงยังเป็นชั่วโมงเสมอ (ตรงกับ feature ของโมเดล)
+              // แค่เปลี่ยนตัวเลขที่โชว์ตามหน่วยที่ตั้งไว้ใน Settings
+              Text(
+                showMinutes
+                    ? s.minutesShort((_sleepDuration * 60).round())
+                    : s.hoursValue(_sleepDuration.toStringAsFixed(1)),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildTimeTile(context, s.bedtime, _bedtime, Icons.nightlight_round, true),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _buildTimeTile(context, s.wakeTime, _wakeTime, Icons.wb_sunny_outlined, false),
+              ),
+            ],
+          ),
+          if (_rawSleepHours > maxSleepHours) ...[
+            const SizedBox(height: 10),
+            Text(
+              s.sleepCappedNote(maxSleepHours.round()),
+              style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTimeTile(
+    BuildContext context,
+    String label,
+    TimeOfDay time,
+    IconData icon,
+    bool isBedtime,
+  ) {
+    return Semantics(
+      button: true,
+      label: '$label ${formatClockTime(time)}',
+      excludeSemantics: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _pickTime(isBedtime: isBedtime),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppTheme.borderColor(context)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: AppTheme.textMutedColor(context)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      formatClockTime(time),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppTheme.textPrimaryColor(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

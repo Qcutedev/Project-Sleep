@@ -11,12 +11,19 @@ class SleepAssessmentInput {
   final int age; // ปี
   final String gender; // 'Male' หรือ 'Female'
 
+  // เวลาเข้านอน/ตื่นแบบ 'HH:mm' ใช้ดูความสม่ำเสมอในเครื่องเท่านั้น โมเดลไม่ได้ใช้
+  // เป็น null ในประวัติเก่าก่อนมีฟีเจอร์นี้
+  final String? bedtime;
+  final String? wakeTime;
+
   const SleepAssessmentInput({
     required this.sleepDuration,
     required this.stressLevel,
     required this.physicalActivity,
     required this.age,
     required this.gender,
+    this.bedtime,
+    this.wakeTime,
   });
 
   /// แปลงเป็น JSON เพื่อส่งให้ FastAPI ตาม API contract เบื้องต้น
