@@ -6,6 +6,7 @@ import '../services/history_service.dart';
 import '../services/sleep_advice.dart';
 import '../services/sleep_stats.dart';
 import '../theme/app_theme.dart';
+import '../widgets/bedtime_consistency_card.dart';
 import '../widgets/quality_badge.dart';
 import '../widgets/sleep_trend_chart.dart';
 import '../widgets/stat_chip.dart';
@@ -133,6 +134,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     _buildEmptyState(context)
                   else ...[
                     _buildChartCard(context, days),
+                    BedtimeConsistencyCard(results: results),
                     const SizedBox(height: 16),
                     _buildSummaryCard(context, results),
                     const SizedBox(height: 16),
