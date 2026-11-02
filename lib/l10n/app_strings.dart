@@ -652,6 +652,19 @@ class S {
       );
   String get resetDone =>
       _t('All app data has been reset', 'รีเซ็ตข้อมูลแอปทั้งหมดแล้ว');
+  String get yourData => _t('Your Data', 'ข้อมูลของคุณ');
+  String get exportHistory => _t('Export history', 'ส่งออกประวัติ');
+  String get exportHistorySubtitle => _t(
+        'Save your check-ins as a CSV file',
+        'บันทึกการเช็กอินเป็นไฟล์ CSV',
+      );
+  String get exportEmpty =>
+      _t('No check-ins to export yet', 'ยังไม่มีการเช็กอินให้ส่งออก');
+  String get exportDone => _t('History saved', 'บันทึกประวัติแล้ว');
+  String get exportFailed => _t(
+        'Could not save the file. Try again.',
+        'บันทึกไฟล์ไม่สำเร็จ ลองอีกครั้ง',
+      );
   String get appInformation => _t('App Information', 'ข้อมูลแอป');
   String get appNameLabel => _t('App name', 'ชื่อแอป');
   String get version => _t('Version', 'เวอร์ชัน');
