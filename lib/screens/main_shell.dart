@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
+import '../services/api_config.dart';
+import '../services/sleep_api_service.dart';
 import '../services/sound_player_controller.dart';
 import '../widgets/mini_player_bar.dart';
 import 'home_screen.dart';
@@ -29,6 +31,8 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     _soundController = SoundPlayerController();
+    // ไม่ต้องรอผล ให้เซิร์ฟเวอร์เริ่มเครื่องรอไว้ก่อนผู้ใช้กดวิเคราะห์
+    RealSleepApiService(baseUrl: ApiConfig.baseUrl).warmUp();
     _pages = [
       const HomeScreen(),
       const AlarmListScreen(),

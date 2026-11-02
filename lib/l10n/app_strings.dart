@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import '../services/sleep_advice.dart';
+import '../services/sleep_api_service.dart' show SleepApiErrorKind;
 
 /// ภาษาปัจจุบันของแอป ('en' | 'th') — ค่าเดียวกับที่หน้า Settings บันทึกไว้
 /// เปลี่ยนค่าที่นี่แล้วทุกหน้าที่เรียก `S.of(context)` จะ rebuild เป็นภาษาใหม่ทันที
@@ -171,6 +172,32 @@ class S {
         'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
       );
   String get tryAgain => _t('Try again', 'ลองอีกครั้ง');
+  String get serverWakingUp => _t(
+        'The server is waking up. The first analysis can take up to a minute.',
+        'เซิร์ฟเวอร์กำลังเริ่มทำงาน ครั้งแรกอาจใช้เวลาถึง 1 นาที',
+      );
+  String apiErrorMessage(SleepApiErrorKind? kind) {
+    switch (kind) {
+      case SleepApiErrorKind.noConnection:
+        return _t(
+          'No connection to the server. Check your internet and try again.',
+          'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจสอบอินเทอร์เน็ตแล้วลองอีกครั้ง',
+        );
+      case SleepApiErrorKind.timeout:
+        return _t(
+          'The server took too long to respond. Please try again.',
+          'เซิร์ฟเวอร์ตอบช้าเกินไป กรุณาลองอีกครั้ง',
+        );
+      case SleepApiErrorKind.server:
+      case SleepApiErrorKind.badResponse:
+        return _t(
+          'The server had a problem. Please try again shortly.',
+          'เซิร์ฟเวอร์มีปัญหา กรุณาลองใหม่อีกสักครู่',
+        );
+      case null:
+        return somethingWentWrong;
+    }
+  }
 
   // ---------- Result ----------
   String get result => _t('Result', 'ผลลัพธ์');
