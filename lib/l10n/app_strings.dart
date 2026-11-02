@@ -152,9 +152,13 @@ class S {
   String get wakeTime => _t('Wake time', 'ตื่นนอน');
   String get hourLabel => _t('Hour', 'ชั่วโมง');
   String get minuteLabel => _t('Minute', 'นาที');
-  String sleepCappedNote(int hours) => _t(
-        'Counted as $hours hrs, the most this assessment accepts.',
-        'นับเป็น $hours ชม. ซึ่งเป็นค่าสูงสุดของแบบประเมินนี้',
+  String sleepOverLimitNote(int hours) => _t(
+        'Sleep over $hours hrs lowers the score.',
+        'นอนเกิน $hours ชม. คะแนนจะถูกปรับลด',
+      );
+  String longSleepAdjustedNote(int hours) => _t(
+        'Score lowered by an app rule for sleep over $hours hrs. This is not a model result.',
+        'คะแนนถูกลดตามกฎของแอปเมื่อนอนเกิน $hours ชม. ส่วนนี้ไม่ได้มาจากโมเดล',
       );
   String hoursValue(String h) => _t('$h hrs', '$h ชม.');
   String get stressLevel => _t('Stress level', 'ระดับความเครียด');
@@ -349,6 +353,7 @@ class S {
   // ประวัติเป็นภาษาอังกฤษด้วย) จึงแปลตอนแสดงผล ข้อความที่ไม่รู้จักจะแสดงตามเดิม
   static const Map<String, String> _factorsTh = {
     'Short sleep duration': 'นอนน้อย',
+    'Long sleep duration': 'นอนนาน',
     'High stress level': 'ความเครียดสูง',
     'Low physical activity': 'ขยับร่างกายน้อย',
     'No major risk factors found': 'ไม่พบปัจจัยเสี่ยงหลัก',
@@ -426,7 +431,7 @@ class S {
       _t('Average score by day', 'คะแนนเฉลี่ยตามวัน');
   String get insightsTitle =>
       _t('Patterns in your data', 'ข้อสังเกตจากข้อมูลของคุณ');
-  String get insightSleepHigh => _t('6.5 hrs or more', '6.5 ชม. ขึ้นไป');
+  String get insightSleepHigh => _t('6.5–10 hrs', '6.5–10 ชม.');
   String get insightSleepLow => _t('Under 6.5 hrs', 'น้อยกว่า 6.5 ชม.');
   String get insightStressHigh => _t('Level 7 or higher', 'ระดับ 7 ขึ้นไป');
   String get insightStressLow => _t('Below level 7', 'ต่ำกว่าระดับ 7');

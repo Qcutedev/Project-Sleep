@@ -33,7 +33,9 @@ class SleepTrendChart extends StatelessWidget {
       case TrendMetric.score:
         return 100;
       case TrendMetric.duration:
-        return 12;
+        // ขยายเป็นทวีคูณของ 3 ให้ตรงกับเส้นแกน เพราะเวลาเข้านอน-ตื่นทำให้นอนเกิน 12 ชม. ได้
+        final peak = days.fold<double>(0, (m, d) => math.max(m, d.avgDuration));
+        return math.max(12, (peak / 3).ceil() * 3).toDouble();
       case TrendMetric.stress:
         return 10;
       case TrendMetric.activity:

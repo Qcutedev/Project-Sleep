@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/sleep_result.dart';
+import 'long_sleep_rule.dart';
 import 'sleep_stats.dart';
 
 /// เป้าหมายชั่วโมงนอนต่อคืน เก็บในเครื่อง
@@ -74,7 +75,11 @@ WeeklySummary? weeklySummary(
     daysCheckedIn: thisWeek.length,
     avgScore: avgScore,
     avgHours: avg(thisWeek, (d) => d.avgDuration),
-    daysMetGoal: thisWeek.where((d) => d.avgDuration >= goalHours).length,
+    // นอนเกินเกณฑ์ของแพทย์ไม่นับว่าถึงเป้า เพราะคะแนนวันนั้นถูกลด
+    daysMetGoal: thisWeek
+        .where((d) =>
+            d.avgDuration >= goalHours && d.avgDuration <= longSleepDoctorLimitHours)
+        .length,
     scoreChange:
         canCompare ? (avgScore - avg(lastWeek, (d) => d.avgScore)).round() : null,
   );

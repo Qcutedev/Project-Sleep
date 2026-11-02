@@ -40,6 +40,7 @@ String qualityForScore(double score) {
 IconData factorIcon(String rawFactor) {
   switch (rawFactor) {
     case 'Short sleep duration':
+    case 'Long sleep duration':
       return Icons.bedtime_outlined;
     case 'High stress level':
       return Icons.psychology_outlined;
@@ -96,9 +97,6 @@ List<DailySleep> groupByDay(Iterable<SleepResult> history) {
     ..sort((a, b) => a.day.compareTo(b.day));
   return days;
 }
-
-/// ชั่วโมงนอนสูงสุดที่ส่งให้โมเดล ตรงกับข้อตกลงเดิมของฟอร์มประเมิน
-const double maxSleepHours = 10;
 
 /// ชั่วโมงนอนจากเวลาเข้านอนถึงเวลาตื่น ปัด 0.1 ชม. รองรับการนอนข้ามเที่ยงคืน
 double sleepHoursBetween(TimeOfDay bedtime, TimeOfDay wakeTime) {

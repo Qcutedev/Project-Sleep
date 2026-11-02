@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
 import '../models/sleep_result.dart';
+import '../services/long_sleep_rule.dart';
 import '../services/sleep_advice.dart';
 import '../services/sleep_stats.dart';
 import '../theme/app_theme.dart';
@@ -421,6 +422,10 @@ class InsightsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = S.of(context);
 
+    // คืนที่ถูกลดคะแนนเพราะนอนนานไม่นำมาเทียบชั่วโมงนอน ไม่อย่างนั้นจะกดค่าเฉลี่ยของกลุ่มที่นอนพอ
+    final notLongSleep =
+        results.where((r) => !r.factors.contains(longSleepFactor)).toList();
+
     // เกณฑ์แบ่งกลุ่มใช้ค่าเดียวกับที่ backend ใช้ตัดสิน "ปัจจัย" แต่ละข้อ
     final comparisons = [
       (
@@ -428,25 +433,28 @@ class InsightsCard extends StatelessWidget {
         s.insightSleepHigh,
         s.insightSleepLow,
         (SleepResult r) => r.input.sleepDuration >= 6.5,
+        notLongSleep,
       ),
       (
         s.stressLevel,
         s.insightStressLow,
         s.insightStressHigh,
         (SleepResult r) => r.input.stressLevel < 7,
+        results,
       ),
       (
         s.physicalActivity,
         s.insightActivityHigh,
         s.insightActivityLow,
         (SleepResult r) => r.input.physicalActivity >= 20,
+        results,
       ),
     ];
 
     final rows = <Widget>[];
     for (final c in comparisons) {
-      final groupA = results.where(c.$4).toList();
-      final groupB = results.where((r) => !c.$4(r)).toList();
+      final groupA = c.$5.where(c.$4).toList();
+      final groupB = c.$5.where((r) => !c.$4(r)).toList();
       if (groupA.length < _minGroupSize || groupB.length < _minGroupSize) {
         continue;
       }
