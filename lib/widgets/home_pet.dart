@@ -192,7 +192,9 @@ class _HomePetState extends State<HomePet> with SingleTickerProviderStateMixin {
               ..asleep = initial == PetMode.sleep;
           }
         }
+        // มาสคอตเป็นของตกแต่ง ไม่ต้องให้โปรแกรมอ่านหน้าจออ่าน
         return GestureDetector(
+          excludeFromSemantics: true,
           behavior: HitTestBehavior.translucent,
           onTapDown: _onTapDown,
           child: RepaintBoundary(

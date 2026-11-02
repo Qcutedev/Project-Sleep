@@ -55,6 +55,29 @@ class SleepTrendChart extends StatelessWidget {
     }
   }
 
+  /// กราฟอ่านด้วยโปรแกรมอ่านหน้าจอไม่ได้ จึงสรุปค่าสำคัญเป็นประโยคแทน
+  String _semanticsLabel(S s) {
+    final values = days.map((d) => d.valueFor(metric)).toList();
+    final String metricName;
+    switch (metric) {
+      case TrendMetric.score:
+        metricName = s.metricScore;
+      case TrendMetric.duration:
+        metricName = s.metricSleep;
+      case TrendMetric.stress:
+        metricName = s.metricStress;
+      case TrendMetric.activity:
+        metricName = s.metricActivity;
+    }
+    return s.chartSemantics(
+      metricName,
+      days.length,
+      formatMetric(s, metric, values.last),
+      formatMetric(s, metric, values.reduce(math.max)),
+      formatMetric(s, metric, values.reduce(math.min)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = S.of(context);
@@ -79,130 +102,135 @@ class SleepTrendChart extends StatelessWidget {
     final dense = days.length > 31;
     final dotRing = AppTheme.surfaceColor(context);
 
-    return SizedBox(
-      height: height,
-      child: LineChart(
-        LineChartData(
-          minX: 0,
-          maxX: (windowDays - 1).toDouble(),
-          minY: 0,
-          maxY: _maxY,
-          gridData: const FlGridData(show: false),
-          borderData: FlBorderData(show: false),
-          lineTouchData: LineTouchData(
-            enabled: interactive,
-            touchTooltipData: LineTouchTooltipData(
-              fitInsideHorizontally: true,
-              fitInsideVertically: true,
-              getTooltipColor: (_) => AppTheme.isDark(context)
-                  ? AppTheme.darkSurfaceMuted
-                  : AppTheme.textPrimary,
-              getTooltipItems: (spots) => spots.map((spot) {
-                final day = byOffset[spot.x.round()];
-                if (day == null) return null;
-                return LineTooltipItem(
-                  '${day.day.day}/${day.day.month} · ${s.quality(day.quality)}\n',
-                  TextStyle(
-                    fontSize: 11,
-                    color: Colors.white.withValues(alpha: 0.75),
-                  ),
-                  children: [
-                    TextSpan(
-                      text: formatMetric(s, metric, spot.y),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-          ),
-          titlesData: FlTitlesData(
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 30,
-                interval: _yInterval,
-                getTitlesWidget: (value, meta) {
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 4),
-                    child: Text(
-                      value.toInt().toString(),
-                      style: TextStyle(fontSize: 10, color: mutedColor),
-                    ),
-                  );
-                },
-              ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 22,
-                interval: 1,
-                getTitlesWidget: (value, meta) {
-                  final index = value.round();
-                  if (value != index.toDouble() ||
-                      index < 0 ||
-                      index >= windowDays ||
-                      index % labelStep != 0) {
-                    return const SizedBox.shrink();
-                  }
-                  final date =
-                      DateTime(start.year, start.month, start.day + index);
-                  final label = isWeekView
-                      ? s.dayNamesShort[date.weekday - 1]
-                      : '${date.day}/${date.month}';
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      label,
-                      style: TextStyle(fontSize: 10, color: mutedColor),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-          lineBarsData: [
-            LineChartBarData(
-              isCurved: true,
-              preventCurveOverShooting: true,
-              color: AppTheme.primary,
-              barWidth: 2.5,
-              dotData: FlDotData(
-                show: true,
-                getDotPainter: (spot, percent, bar, index) {
+    return Semantics(
+      container: true,
+      excludeSemantics: true,
+      label: _semanticsLabel(s),
+      child: SizedBox(
+        height: height,
+        child: LineChart(
+          LineChartData(
+            minX: 0,
+            maxX: (windowDays - 1).toDouble(),
+            minY: 0,
+            maxY: _maxY,
+            gridData: const FlGridData(show: false),
+            borderData: FlBorderData(show: false),
+            lineTouchData: LineTouchData(
+              enabled: interactive,
+              touchTooltipData: LineTouchTooltipData(
+                fitInsideHorizontally: true,
+                fitInsideVertically: true,
+                getTooltipColor: (_) => AppTheme.isDark(context)
+                    ? AppTheme.darkSurfaceMuted
+                    : AppTheme.textPrimary,
+                getTooltipItems: (spots) => spots.map((spot) {
                   final day = byOffset[spot.x.round()];
-                  final color = day == null
-                      ? AppTheme.primary
-                      : AppTheme.qualityColor(day.quality);
-                  return FlDotCirclePainter(
-                    radius: dense ? 2.5 : 4,
-                    color: color,
-                    strokeWidth: dense ? 0 : 2,
-                    strokeColor: dotRing,
+                  if (day == null) return null;
+                  return LineTooltipItem(
+                    '${day.day.day}/${day.day.month} · ${s.quality(day.quality)}\n',
+                    TextStyle(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
+                    children: [
+                      TextSpan(
+                        text: formatMetric(s, metric, spot.y),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   );
-                },
+                }).toList(),
               ),
-              belowBarData: BarAreaData(
-                show: true,
-                color: AppTheme.primary.withValues(alpha: 0.1),
-              ),
-              spots: [
-                for (final offset in offsets)
-                  FlSpot(offset.toDouble(), byOffset[offset]!.valueFor(metric)),
-              ],
             ),
-          ],
+            titlesData: FlTitlesData(
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 30,
+                  interval: _yInterval,
+                  getTitlesWidget: (value, meta) {
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Text(
+                        value.toInt().toString(),
+                        style: TextStyle(fontSize: 10, color: mutedColor),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 22,
+                  interval: 1,
+                  getTitlesWidget: (value, meta) {
+                    final index = value.round();
+                    if (value != index.toDouble() ||
+                        index < 0 ||
+                        index >= windowDays ||
+                        index % labelStep != 0) {
+                      return const SizedBox.shrink();
+                    }
+                    final date =
+                        DateTime(start.year, start.month, start.day + index);
+                    final label = isWeekView
+                        ? s.dayNamesShort[date.weekday - 1]
+                        : '${date.day}/${date.month}';
+                    return Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        label,
+                        style: TextStyle(fontSize: 10, color: mutedColor),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+            lineBarsData: [
+              LineChartBarData(
+                isCurved: true,
+                preventCurveOverShooting: true,
+                color: AppTheme.primary,
+                barWidth: 2.5,
+                dotData: FlDotData(
+                  show: true,
+                  getDotPainter: (spot, percent, bar, index) {
+                    final day = byOffset[spot.x.round()];
+                    final color = day == null
+                        ? AppTheme.primary
+                        : AppTheme.qualityColor(day.quality);
+                    return FlDotCirclePainter(
+                      radius: dense ? 2.5 : 4,
+                      color: color,
+                      strokeWidth: dense ? 0 : 2,
+                      strokeColor: dotRing,
+                    );
+                  },
+                ),
+                belowBarData: BarAreaData(
+                  show: true,
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                ),
+                spots: [
+                  for (final offset in offsets)
+                    FlSpot(offset.toDouble(), byOffset[offset]!.valueFor(metric)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

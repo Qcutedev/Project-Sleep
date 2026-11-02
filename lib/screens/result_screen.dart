@@ -123,6 +123,7 @@ class _ResultScreenState extends State<ResultScreen>
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
                 icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                tooltip: s.back,
                 onPressed: () => Navigator.of(context).pop(),
               ),
               const SizedBox(width: 10),
@@ -186,51 +187,57 @@ class _ResultScreenState extends State<ResultScreen>
   }
 
   Widget _buildScoreRing() {
-    return SizedBox(
-      width: 124,
-      height: 124,
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          return Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                width: 124,
-                height: 124,
-                child: CircularProgressIndicator(
-                  value: _progressAnimation.value,
-                  strokeWidth: 10,
-                  strokeCap: StrokeCap.round,
-                  backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+    // อ่านค่าจริงเลย ไม่อ่านตัวเลขที่กำลังวิ่งของอนิเมชัน
+    return Semantics(
+      container: true,
+      label: S.of(context).scoreSemantics(widget.result.displayScore),
+      excludeSemantics: true,
+      child: SizedBox(
+        width: 124,
+        height: 124,
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 124,
+                  height: 124,
+                  child: CircularProgressIndicator(
+                    value: _progressAnimation.value,
+                    strokeWidth: 10,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: Colors.white.withValues(alpha: 0.2),
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
                 ),
-              ),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${(_progressAnimation.value * 100).round()}',
-                    style: const TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.0,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${(_progressAnimation.value * 100).round()}',
+                      style: const TextStyle(
+                        fontSize: 36,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        height: 1.0,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '/100',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.8),
+                    const SizedBox(height: 2),
+                    Text(
+                      '/100',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
-          );
-        },
+                  ],
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
