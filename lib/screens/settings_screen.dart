@@ -11,6 +11,7 @@ import '../services/alarm_notification_service.dart';
 import '../services/alarm_scheduler_service.dart';
 import '../services/alarm_storage_service.dart';
 import '../services/profile_service.dart';
+import '../services/weekly_summary.dart';
 import '../widgets/profile_avatar.dart';
 import 'profile_screen.dart';
 
@@ -34,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _dailyReminder = false;
   String _appearance = 'light';
   String _language = 'en';
+  double _sleepGoal = SleepGoalService.defaultHours;
 
   static const String _appVersion = '1.0.0';
 
@@ -45,8 +47,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    final sleepGoal = await SleepGoalService.load();
     if (!mounted) return;
     setState(() {
+      _sleepGoal = sleepGoal;
       _durationUnit = prefs.getString(_kDurationUnit) ?? 'hours';
       _sleepReminder = prefs.getBool(_kSleepReminder) ?? false;
       _dailyReminder = prefs.getBool(_kDailyReminder) ?? false;
@@ -170,6 +174,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         _dailyReminder = false;
         _appearance = 'light';
         _language = 'en';
+        _sleepGoal = SleepGoalService.defaultHours;
       });
       AppTheme.themeNotifier.value = ThemeMode.light;
       AppLanguage.notifier.value = 'en';
@@ -265,6 +270,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ],
+            ),
+          ),
+
+          _sectionTitle(context, s.sleepGoalTitle),
+          _card(
+            context,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          s.sleepGoalLabel,
+                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textPrimary),
+                        ),
+                      ),
+                      Text(
+                        s.hoursValue(_sleepGoal.toStringAsFixed(1)),
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: _sleepGoal,
+                    min: SleepGoalService.minHours,
+                    max: SleepGoalService.maxHours,
+                    divisions: 10,
+                    label: s.hoursValue(_sleepGoal.toStringAsFixed(1)),
+                    onChanged: (v) => setState(() => _sleepGoal = v),
+                    onChangeEnd: SleepGoalService.save,
+                  ),
+                  Text(
+                    s.sleepGoalHint,
+                    style: TextStyle(fontSize: 11, color: textMuted),
+                  ),
+                ],
+              ),
             ),
           ),
 
