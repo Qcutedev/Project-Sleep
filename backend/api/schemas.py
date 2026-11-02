@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field, field_validator
+from typing import Literal
+
+from pydantic import BaseModel, Field
 
 
 class SleepPredictionRequest(BaseModel):
@@ -6,15 +8,8 @@ class SleepPredictionRequest(BaseModel):
     stress_level: int = Field(..., ge=1, le=10)
     physical_activity: int = Field(..., ge=0, le=1440)
     age: int = Field(..., ge=1, le=120)
-    gender: str = Field(..., min_length=1, max_length=32)
-
-    @field_validator("gender")
-    @classmethod
-    def normalize_gender(cls, value: str) -> str:
-        normalized = value.strip()
-        if not normalized:
-            raise ValueError("gender must not be blank")
-        return normalized
+    # โมเดลรู้จักแค่สองค่านี้ ค่าอื่นจะถูก OneHotEncoder มองข้ามแล้วได้คะแนนโดยไม่มีข้อผิดพลาด
+    gender: Literal["Male", "Female"]
 
 
 class SleepPredictionResponse(BaseModel):
