@@ -77,6 +77,47 @@ class S {
   // ---------- Splash ----------
   String get splashSubtitle => _t('Understand your sleep', 'เข้าใจการนอนของคุณ');
 
+  // ---------- Onboarding ----------
+  String get onboardingSkip => _t('Skip', 'ข้าม');
+  String get onboardingNext => _t('Next', 'ถัดไป');
+  String get onboardingStart => _t('Get started', 'เริ่มใช้งาน');
+  String onboardingPageOf(int page, int total) =>
+      _t('Page $page of $total', 'หน้า $page จาก $total');
+  String get onboardingWelcomeTitle =>
+      _t('Welcome to SleepWise AI', 'ยินดีต้อนรับสู่ SleepWise AI');
+  String get onboardingWelcomeBody => _t(
+        'A short daily check-in to help you see your sleep patterns.',
+        'เช็กอินสั้นๆ ทุกวัน เพื่อให้คุณเห็นรูปแบบการนอนของตัวเอง',
+      );
+  String get onboardingHowTitle => _t('How it works', 'แอปนี้ทำอะไรได้');
+  String get onboardingStep1Title => _t('Check in daily', 'เช็กอินทุกวัน');
+  String get onboardingStep1Body => _t(
+        'Enter your sleep, stress, and activity. It takes about a minute.',
+        'กรอกการนอน ความเครียด และกิจกรรม ใช้เวลาราว 1 นาที',
+      );
+  String get onboardingStep2Title =>
+      _t('See your score and trend', 'ดูคะแนนและแนวโน้ม');
+  String get onboardingStep2Body => _t(
+        'A model estimates your sleep quality, with general tips.',
+        'โมเดลจะทำนายคุณภาพการนอน พร้อมคำแนะนำทั่วไป',
+      );
+  String get onboardingStep3Title =>
+      _t('Plan your night', 'วางแผนการนอน');
+  String get onboardingStep3Body => _t(
+        'Use the sleep-cycle alarm and calming sounds.',
+        'ใช้นาฬิกาปลุกตามรอบการนอนและเสียงผ่อนคลาย',
+      );
+  String get onboardingDisclaimer => _t(
+        'This is an educational prototype. Results are model predictions, not a medical diagnosis.',
+        'แอปนี้เป็นต้นแบบเพื่อการศึกษา ผลที่ได้เป็นการทำนายของโมเดล ไม่ใช่การวินิจฉัยทางการแพทย์',
+      );
+  String get onboardingProfileTitle =>
+      _t('A little about you', 'ข้อมูลของคุณ');
+  String get onboardingProfileBody => _t(
+        'Used to fill in each assessment. It stays on this device, and you can change it anytime.',
+        'ใช้เติมในแบบประเมินแต่ละครั้ง เก็บไว้ในเครื่องนี้ และแก้ไขได้ทุกเมื่อ',
+      );
+
   // ---------- Bottom navigation ----------
   String get navAlarm => _t('Alarm', 'นาฬิกาปลุก');
   String get navSounds => _t('Sounds', 'เสียง');
