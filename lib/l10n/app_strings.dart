@@ -449,21 +449,41 @@ class S {
   String get aboutBody => _t(
         'SleepWise AI is an educational prototype built for a CPE310 '
             'course project. It estimates sleep quality (Good, Fair, or Poor) '
-            'from lifestyle inputs such as sleep duration, stress level, '
-            'physical activity, and screen time, using a machine learning '
-            'model trained by the project team.',
+            'from sleep duration, stress level, physical activity, age, and '
+            'gender, using a machine learning model.',
         'SleepWise AI เป็นต้นแบบเพื่อการศึกษาที่จัดทำขึ้นสำหรับโครงงานรายวิชา '
             'CPE310 แอปจะประเมินคุณภาพการนอน (ดี พอใช้ หรือไม่ดี) '
-            'จากข้อมูลการใช้ชีวิต เช่น ระยะเวลาการนอน ระดับความเครียด '
-            'กิจกรรมทางกาย และเวลาที่ใช้หน้าจอ โดยใช้โมเดล machine learning '
-            'ที่ทีมผู้จัดทำเป็นผู้ฝึก',
+            'จากระยะเวลาการนอน ระดับความเครียด กิจกรรมทางกาย อายุ และเพศ '
+            'โดยใช้โมเดล machine learning',
+      );
+  String get aboutModelTitle => _t('About the model', 'เกี่ยวกับโมเดล');
+  String get aboutModelType => _t(
+        'A random forest regression model (100 trees) trained on about 300 records.',
+        'โมเดล random forest regression (100 ต้น) ฝึกจากข้อมูลราว 300 รายการ',
+      );
+  String get aboutModelInfluence => _t(
+        'Sleep duration and stress level affect the score most. Physical activity and gender have very little effect.',
+        'ระยะเวลาการนอนและความเครียดมีผลต่อคะแนนมากที่สุด กิจกรรมทางกายและเพศมีผลน้อยมาก',
+      );
+  String get aboutModelRange => _t(
+        'The training data mostly covers 6–8 hrs of sleep and ages 28–52. Outside these ranges the score barely changes.',
+        'ข้อมูลที่ใช้ฝึกส่วนใหญ่อยู่ในช่วงนอน 6–8 ชม. และอายุ 28–52 ปี นอกช่วงนี้คะแนนแทบไม่เปลี่ยน',
+      );
+  String get aboutModelRules => _t(
+        'The factors and tips you see come from fixed rules, not from the model.',
+        'ปัจจัยและคำแนะนำที่แสดงมาจากกฎที่กำหนดไว้ ไม่ได้มาจากโมเดล',
+      );
+  String get aboutDataTitle => _t('Your data', 'ข้อมูลของคุณ');
+  String get aboutDataBody => _t(
+        'Your inputs are sent to the server only to get a prediction. History and profile stay on this device.',
+        'ข้อมูลที่กรอกถูกส่งไปยังเซิร์ฟเวอร์เพื่อทำนายผลเท่านั้น ส่วนประวัติและโปรไฟล์เก็บไว้ในเครื่องนี้',
       );
   String get aboutDisclaimer => _t(
-        'This application is an educational prototype. It is not '
-            'intended to diagnose, treat, or substitute advice from a '
-            'qualified healthcare professional.',
-        'แอปพลิเคชันนี้เป็นต้นแบบเพื่อการศึกษา ไม่ได้มีวัตถุประสงค์เพื่อ'
-            'วินิจฉัย รักษา หรือใช้แทนคำแนะนำจากบุคลากรทางการแพทย์',
+        'This application is an educational prototype and has not been '
+            'clinically validated. It is not intended to diagnose, treat, or '
+            'substitute advice from a qualified healthcare professional.',
+        'แอปพลิเคชันนี้เป็นต้นแบบเพื่อการศึกษา ยังไม่ผ่านการตรวจสอบทางคลินิก '
+            'ไม่ได้มีวัตถุประสงค์เพื่อวินิจฉัย รักษา หรือใช้แทนคำแนะนำจากบุคลากรทางการแพทย์',
       );
 
   // ---------- Settings ----------

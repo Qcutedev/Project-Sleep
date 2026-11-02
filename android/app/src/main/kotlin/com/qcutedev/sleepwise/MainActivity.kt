@@ -1,4 +1,4 @@
-package com.example.sleepwise_ai
+package com.qcutedev.sleepwise
 
 import android.content.ComponentName
 import android.content.Intent
