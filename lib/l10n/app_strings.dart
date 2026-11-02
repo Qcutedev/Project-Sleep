@@ -370,7 +370,6 @@ class S {
     'Short sleep duration': 'นอนน้อย',
     'High stress level': 'ความเครียดสูง',
     'Low physical activity': 'ขยับร่างกายน้อย',
-    'No major risk factors found': 'ไม่พบปัจจัยเสี่ยงหลัก',
   };
 
   static const Map<String, String> _recommendationsTh = {
@@ -384,7 +383,15 @@ class S {
         'ลองเข้านอนและตื่นให้เป็นเวลาสม่ำเสมอ',
   };
 
-  String factor(String raw) => isThai ? (_factorsTh[raw] ?? raw) : raw;
+  String factor(String raw) {
+    // backend ใช้เกณฑ์นอนน้อยกว่า 6.5 ชม. ส่วนคำแนะนำในแอปใช้ช่วงตามอายุ (เช่น 7-9 ชม.)
+    // คนที่นอน 6.7 ชม. จึงได้ทั้งข้อความนี้และคำแนะนำให้นอนเพิ่ม ถ้าเขียนว่า "ไม่พบปัจจัยเสี่ยง"
+    // จะขัดกันเอง จึงบอกเพียงว่าไม่มีค่าใดเกินเกณฑ์ ค่าที่เก็บในประวัติยังเป็นข้อความเดิมจาก backend
+    if (raw == 'No major risk factors found') {
+      return _t('No factors above the set limits', 'ไม่มีปัจจัยที่เกินเกณฑ์');
+    }
+    return isThai ? (_factorsTh[raw] ?? raw) : raw;
+  }
   String recommendation(String raw) =>
       isThai ? (_recommendationsTh[raw] ?? raw) : raw;
 
@@ -411,8 +418,8 @@ class S {
       _t('Sleep quality breakdown', 'สัดส่วนคุณภาพการนอน');
   String get commonFactors => _t('Most common factors', 'ปัจจัยที่พบบ่อย');
   String get noRiskFactorsInRange => _t(
-        'No risk factors found in this period',
-        'ไม่พบปัจจัยเสี่ยงในช่วงนี้',
+        'No factors above the set limits in this period',
+        'ไม่มีปัจจัยที่เกินเกณฑ์ในช่วงนี้',
       );
   String get scoreByWeekday =>
       _t('Average score by day', 'คะแนนเฉลี่ยตามวัน');
