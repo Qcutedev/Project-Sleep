@@ -13,7 +13,7 @@
 
 - **โฟลเดอร์ `C:\Project SLEEP` ไม่ใช่ git repo** ถ้ารัน git ที่นั่นจะขึ้น `fatal: not a git repository` ต้อง `cd` เข้า `sleepwise_ai` ก่อน
 - Repo เคยอยู่ที่บัญชี `kiwnoz` แล้วย้ายมา `Qcutedev` remote ในเครื่องชี้ที่อยู่ใหม่แล้ว
-- เครื่องนี้ไม่มี `gh` การเปิดและ merge Pull Request ทำบนเว็บ GitHub
+- เจ้าของโปรเจคเปิดและ merge Pull Request บนเว็บ GitHub
 
 ## ขั้นตอนทำงาน
 
@@ -97,6 +97,7 @@ git push -u origin feature/ชื่อเรื่อง
 - `build/`, ไฟล์ `.apk` (อยู่ใน `.gitignore` แล้ว)
 - เทสต์ชั่วคราวและรูปที่สร้างตอนตรวจ UI (`test/tmp_*`, `test/shots/`)
 - รหัสผ่าน token หรือไฟล์ `.env`
+- กุญแจเซ็นแอป: `android/key.properties` และไฟล์ `.jks` (อยู่ใน `.gitignore` แล้ว)
 - IP ของเครื่อง หรือ path ที่ผูกกับเครื่องนี้ในโค้ดแอป
 
 ใช้ `git add <ไฟล์>` ระบุไฟล์ หรือดู `git status` ก่อนใช้ `git add -A` ทุกครั้ง
