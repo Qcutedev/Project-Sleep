@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_assessment_input.dart';
+import '../services/long_sleep_rule.dart';
 import '../services/sleep_stats.dart';
 import 'loading_screen.dart';
 
@@ -69,9 +70,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
     });
   }
 
-  double get _rawSleepHours => sleepHoursBetween(_bedtime, _wakeTime);
-  double get _sleepDuration =>
-      _rawSleepHours > maxSleepHours ? maxSleepHours : _rawSleepHours;
+  double get _sleepDuration => sleepHoursBetween(_bedtime, _wakeTime);
 
   Future<void> _pickTime({required bool isBedtime}) async {
     final s = S.current;
@@ -254,10 +253,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               ),
             ],
           ),
-          if (_rawSleepHours > maxSleepHours) ...[
+          if (_sleepDuration > longSleepThresholdFor(_age.round())) ...[
             const SizedBox(height: 10),
             Text(
-              s.sleepCappedNote(maxSleepHours.round()),
+              s.sleepOverLimitNote(longSleepThresholdFor(_age.round()).round()),
               style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context)),
             ),
           ],

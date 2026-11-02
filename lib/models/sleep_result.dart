@@ -1,3 +1,4 @@
+import '../services/long_sleep_rule.dart';
 import 'sleep_assessment_input.dart';
 
 /// ผลลัพธ์การประเมินคุณภาพการนอน 1 ครั้ง
@@ -6,7 +7,7 @@ import 'sleep_assessment_input.dart';
 /// และข้อมูล input ที่ใช้ทำนายไว้ด้วย เพื่อเอาไปแสดงกราฟ/ประวัติย้อนหลังได้
 class SleepResult {
   final String quality; // 'Good' | 'Fair' | 'Poor' (ตรงกับ label จาก model)
-  final int score; // คะแนนจาก model ที่ backend แปลงเป็น scale 1-100
+  final int score; // คะแนนจาก model ที่ backend แปลงเป็น scale 1-100 (ถูกลดถ้านอนเกินเกณฑ์ตามอายุ)
   final List<String> factors; // ปัจจัยที่สัมพันธ์กับผลลัพธ์ (ไม่ใช่สาเหตุ/การวินิจฉัย)
   final String recommendation; // คำแนะนำทั่วไปเกี่ยวกับ sleep hygiene
   final DateTime timestamp;
@@ -27,13 +28,22 @@ class SleepResult {
     Map<String, dynamic> json, {
     required SleepAssessmentInput input,
   }) {
-    return SleepResult(
-      quality: json['sleep_quality'] as String? ?? 'Fair',
+    // ปรับตอนรับผลจาก backend เท่านั้น ค่าในประวัติเป็นค่าที่ปรับแล้ว จึงไม่ถูกลดซ้ำตอนอ่านกลับ
+    final adjusted = applyLongSleepRule(
+      sleepHours: input.sleepDuration,
+      age: input.age,
       score: (json['score'] as num).round(),
+      quality: json['sleep_quality'] as String? ?? 'Fair',
       factors: (json['factors'] as List?)?.map((e) => e.toString()).toList() ??
           const [],
       recommendation: json['recommendation'] as String? ??
           'Try keeping a consistent sleep schedule.',
+    );
+    return SleepResult(
+      quality: adjusted.quality,
+      score: adjusted.score,
+      factors: adjusted.factors,
+      recommendation: adjusted.recommendation,
       timestamp: DateTime.now(),
       input: input,
     );

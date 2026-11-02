@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_result.dart';
+import '../services/long_sleep_rule.dart';
 import '../services/sleep_advice.dart';
 import '../services/sleep_stats.dart';
 import '../widgets/quality_badge.dart';
@@ -377,6 +378,17 @@ class _ResultScreenState extends State<ResultScreen>
                 ],
               ),
             ),
+          if (result.factors.contains(longSleepFactor)) ...[
+            const SizedBox(height: 12),
+            Text(
+              s.longSleepAdjustedNote(longSleepThresholdFor(result.input.age).round()),
+              style: TextStyle(
+                fontSize: 12,
+                height: 1.4,
+                color: AppTheme.textMutedColor(context),
+              ),
+            ),
+          ],
         ],
       ),
     );

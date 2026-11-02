@@ -47,6 +47,14 @@ void main() {
       expect(summary.daysMetGoal, 1);
     });
 
+    test('does not count sleep past the doctor limit as reaching the goal', () {
+      final summary = weeklySummary([
+        _result(day(7), sleep: 10),
+        _result(day(8), sleep: 12),
+      ], 8, now)!;
+      expect(summary.daysMetGoal, 1);
+    });
+
     test('compares weeks only with at least 3 days in each', () {
       final thisWeek = [
         _result(day(5), score: 70),
