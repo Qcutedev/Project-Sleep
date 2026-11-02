@@ -4,6 +4,7 @@ import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../services/notification_service.dart';
 import '../services/alarm_notification_service.dart';
+import '../services/alarm_scheduler_service.dart';
 import '../services/alarm_storage_service.dart';
 import '../services/profile_service.dart';
 import '../widgets/profile_avatar.dart';
@@ -117,8 +118,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
 
     if (confirmed == true) {
+      // ต้องยกเลิกปลุกก่อน prefs.clear() เพราะแพ็กเกจ alarm เก็บข้อมูลไว้ที่เดียวกัน
+      // ถ้าล้างก่อน ปลุกที่ตั้งกับระบบจะยังดังทั้งที่รายการในแอปหายไปแล้ว
+      // ครอบ try/timeout แยกกัน เพื่อให้การรีเซ็ตไปต่อได้แม้ขั้นตอนของระบบค้าง
+      try {
+        await AlarmScheduler.cancelAll().timeout(const Duration(seconds: 10));
+      } catch (_) {}
+      try {
+        await AlarmNotificationService.instance
+            .cancel()
+            .timeout(const Duration(seconds: 5));
+      } catch (_) {}
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
+      AlarmStorageService.instance.externalChanges.value++;
       await ProfileService.instance.clearAfterReset();
       await NotificationService().cancel(NotificationService.sleepReminderId);
       await NotificationService().cancel(NotificationService.dailyReminderId);
