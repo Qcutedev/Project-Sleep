@@ -2,7 +2,9 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
+import '../services/onboarding_service.dart';
 import 'main_shell.dart';
+import 'onboarding_screen.dart';
 
 /// หน้าเปิดแอป: ท้องฟ้ากลางคืน โลโก้ที่ขยับได้ลอยขึ้นมา
 /// ชื่อแอปขึ้นทีละตัวอักษร จบด้วยการจางเข้าหน้าหลัก
@@ -71,19 +73,23 @@ class _SplashScreenState extends State<SplashScreen>
       // เปลี่ยนเฉพาะ Splash ที่อยู่ข้างล่าง ห้ามไปแทนที่หน้าบนสุด
       Navigator.of(context).replace(
         oldRoute: route,
-        newRoute: MaterialPageRoute(builder: (context) => const MainShell()),
+        newRoute: MaterialPageRoute(builder: (context) => _nextPage()),
       );
       return;
     }
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 450),
-        pageBuilder: (context, animation, secondary) => const MainShell(),
+        pageBuilder: (context, animation, secondary) => _nextPage(),
         transitionsBuilder: (context, animation, secondary, child) =>
             FadeTransition(opacity: animation, child: child),
       ),
     );
   }
+
+  Widget _nextPage() => OnboardingService.shouldShow
+      ? const OnboardingScreen()
+      : const MainShell();
 
   @override
   void dispose() {
