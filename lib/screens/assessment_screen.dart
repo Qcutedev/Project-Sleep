@@ -91,8 +91,8 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             icon: Icons.bedtime_outlined,
             value: _sleepDuration,
             min: 0,
-            max: 12,
-            divisions: 24,
+            max: 10,
+            divisions: 20,
             // ค่าที่เก็บจริงยังเป็นชั่วโมงเสมอ (ตรงกับ feature ของโมเดล)
             // แค่เปลี่ยนตัวเลขที่โชว์ตามหน่วยที่ตั้งไว้ใน Settings
             valueLabel: showMinutes
