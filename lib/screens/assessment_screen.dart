@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../l10n/app_strings.dart';
 import '../theme/app_theme.dart';
 import '../models/sleep_assessment_input.dart';
-import '../services/long_sleep_rule.dart';
 import '../services/sleep_stats.dart';
 import 'loading_screen.dart';
 
@@ -253,13 +252,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               ),
             ],
           ),
-          if (_sleepDuration > longSleepThresholdFor(_age.round())) ...[
-            const SizedBox(height: 10),
-            Text(
-              s.sleepOverLimitNote(longSleepThresholdFor(_age.round()).round()),
-              style: TextStyle(fontSize: 11, color: AppTheme.textMutedColor(context)),
-            ),
-          ],
         ],
       ),
     );
