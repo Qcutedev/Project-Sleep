@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../l10n/app_strings.dart';
 import '../models/sleep_result.dart';
 import '../services/history_service.dart';
+import '../services/sleep_advice.dart';
 import '../services/sleep_stats.dart';
 import '../theme/app_theme.dart';
 import '../widgets/quality_badge.dart';
@@ -144,6 +145,8 @@ class _StatsScreenState extends State<StatsScreen> {
                       const SizedBox(height: 16),
                     ],
                     _buildInsightsCard(context, results),
+                    const SizedBox(height: 16),
+                    _buildLongTermCard(context, days),
                     const SizedBox(height: 16),
                     _buildCheckInList(context, results),
                   ],
@@ -791,6 +794,73 @@ class _StatsScreenState extends State<StatsScreen> {
             const SizedBox(height: 14),
             Text(
               s.insightsNote,
+              style: TextStyle(fontSize: 11, height: 1.4, color: AppTheme.textMutedColor(context)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------- long-term advice
+
+  /// คำแนะนำระยะยาวจากแนวโน้มในช่วงที่เลือก (ตรรกะอยู่ที่ sleep_advice.dart)
+  Widget _buildLongTermCard(BuildContext context, List<DailySleep> days) {
+    final s = S.of(context);
+    final tips = longTermAdvice(days);
+
+    return _card(
+      context,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _cardTitle(context, s.longTermTitle),
+          if (tips == null)
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  _iconTile(context, Icons.event_note_outlined),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      s.longTermLocked(minDaysForLongTerm),
+                      style: TextStyle(fontSize: 12.5, height: 1.4, color: AppTheme.textMutedColor(context)),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else ...[
+            const SizedBox(height: 2),
+            Text(
+              s.longTermBasedOn(days.length),
+              style: TextStyle(fontSize: 11.5, color: AppTheme.textMutedColor(context)),
+            ),
+            for (final tip in tips)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _iconTile(context, tip.icon),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        s.longTermText(tip),
+                        style: TextStyle(
+                          fontSize: 13,
+                          height: 1.5,
+                          color: AppTheme.textPrimaryColor(context),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 14),
+            Text(
+              s.longTermNote,
               style: TextStyle(fontSize: 11, height: 1.4, color: AppTheme.textMutedColor(context)),
             ),
           ],
